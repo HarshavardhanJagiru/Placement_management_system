@@ -91,8 +91,8 @@ def student_dashboard():
             # Get user's applications
             cursor.execute("SELECT students.id FROM students WHERE user_id = %s", (session['user_id'],))
             student = cursor.fetchone()
-            cursor.execute("SELECT job_id FROM applications WHERE student_id = %s", (student['id'],))
-            applied_jobs = [app['job_id'] for app in cursor.fetchall()]
+            cursor.execute("SELECT job_id, status FROM applications WHERE student_id = %s", (student['id'],))
+            applied_jobs = {app['job_id']: app['status'] for app in cursor.fetchall()}
         return render_template('student_dashboard.html', jobs=jobs, applied_jobs=applied_jobs)
     finally:
         db.close()
@@ -201,7 +201,7 @@ def my_applications():
             cursor.execute("SELECT id FROM students WHERE user_id = %s", (session['user_id'],))
             student = cursor.fetchone()
             cursor.execute("""
-                SELECT a.status, a.date_applied AS applied_at, a.interview_date, j.position, j.company_name, j.description, j.salary 
+                SELECT a.id, a.status, a.date_applied AS applied_at, a.interview_date, j.position, j.company_name, j.description, j.salary 
                 FROM applications a
                 JOIN jobs j ON a.job_id = j.id
                 WHERE a.student_id = %s
@@ -250,10 +250,16 @@ def apply(job_id):
             student = cursor.fetchone()
             # Check if already applied
             cursor.execute("SELECT * FROM applications WHERE job_id = %s AND student_id = %s", (job_id, student['id']))
-            if cursor.fetchone():
-                flash('You have already applied for this job.', 'warning')
+            existing = cursor.fetchone()
+            if existing:
+                if existing['status'] == 'saved':
+                    cursor.execute("UPDATE applications SET status='applied', date_applied=CURRENT_TIMESTAMP WHERE id=%s", (existing['id'],))
+                    db.commit()
+                    flash('Application submitted successfully!', 'success')
+                else:
+                    flash('You have already applied for this job.', 'warning')
             else:
-                cursor.execute("INSERT INTO applications (job_id, student_id) VALUES (%s, %s)", (job_id, student['id']))
+                cursor.execute("INSERT INTO applications (job_id, student_id, status) VALUES (%s, %s, 'applied')", (job_id, student['id']))
                 db.commit()
                 flash('Application submitted successfully!', 'success')
     except Exception as e:
@@ -262,6 +268,59 @@ def apply(job_id):
     finally:
         db.close()
     return redirect(url_for('student_dashboard'))
+
+@app.route('/student/save_job/<int:job_id>', methods=['POST'])
+def save_job(job_id):
+    if 'user_id' not in session or session['role'] != 'student':
+        return redirect(url_for('login'))
+    
+    db = get_db_connection()
+    try:
+        with db.cursor() as cursor:
+            cursor.execute("SELECT id FROM students WHERE user_id = %s", (session['user_id'],))
+            student = cursor.fetchone()
+            
+            cursor.execute("SELECT * FROM applications WHERE job_id = %s AND student_id = %s", (job_id, student['id']))
+            if cursor.fetchone():
+                flash('Job is already tracked in your applications.', 'warning')
+            else:
+                cursor.execute("INSERT INTO applications (job_id, student_id, status) VALUES (%s, %s, 'saved')", (job_id, student['id']))
+                db.commit()
+                flash('Job saved to Need to Apply!', 'success')
+    except Exception as e:
+        db.rollback()
+        flash(f'Error: {str(e)}', 'error')
+    finally:
+        db.close()
+    return redirect(url_for('student_dashboard'))
+
+@app.route('/student/update_status_ajax', methods=['POST'])
+def update_status_ajax():
+    if 'user_id' not in session or session['role'] != 'student':
+        return {'success': False, 'message': 'Unauthorized'}, 401
+        
+    app_id = request.form.get('app_id')
+    new_status = request.form.get('new_status')
+    
+    valid_statuses = ['saved', 'applied', 'in_progress', 'interview', 'offered', 'rejected']
+    if new_status not in valid_statuses:
+        return {'success': False, 'message': 'Invalid status'}, 400
+        
+    db = get_db_connection()
+    try:
+        with db.cursor() as cursor:
+            # Verify the student actually owns this application
+            cursor.execute("SELECT id FROM students WHERE user_id = %s", (session['user_id'],))
+            student = cursor.fetchone()
+            
+            cursor.execute("UPDATE applications SET status = %s WHERE id = %s AND student_id = %s", (new_status, app_id, student['id']))
+            db.commit()
+            return {'success': True}
+    except Exception as e:
+        db.rollback()
+        return {'success': False, 'message': str(e)}, 500
+    finally:
+        db.close()
 
 if __name__ == '__main__':
     app.run(debug=True)

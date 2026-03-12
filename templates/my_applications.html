@@ -1,117 +1,197 @@
 {% extends 'base.html' %}
 
-{% block title %}My Applications - Placement Management System{% endblock %}
+{% block head %}
+<!-- Sortable JS -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<style>
+    /* Kanban Board Styling */
+    .kanban-board {
+        display: flex;
+        overflow-x: auto;
+        padding-bottom: 2rem;
+        gap: 1.5rem;
+        min-height: 70vh;
+        align-items: flex-start;
+    }
+    .kanban-column {
+        min-width: 320px;
+        max-width: 320px;
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid #e9ecef;
+    }
+    .kanban-header {
+        font-weight: 700;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .kanban-cards {
+        flex-grow: 1;
+        min-height: 150px;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    .kanban-card {
+        background: white;
+        border-radius: 8px;
+        padding: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        cursor: grab;
+        border-left: 4px solid transparent;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .kanban-card:active {
+        cursor: grabbing;
+    }
+    .kanban-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .ghost-card {
+        background: #e9ecef !important;
+        border: 2px dashed #adb5bd !important;
+        opacity: 0.5;
+    }
+    
+    /* Column Colors */
+    .col-saved { border-color: #6c757d; } .col-saved .kanban-header { color: #6c757d; border-bottom-color: #6c757d; } .col-saved .kanban-card { border-left-color: #6c757d; }
+    .col-applied { border-color: #0d6efd; } .col-applied .kanban-header { color: #0d6efd; border-bottom-color: #0d6efd; } .col-applied .kanban-card { border-left-color: #0d6efd; }
+    .col-in_progress { border-color: #f59e0b; } .col-in_progress .kanban-header { color: #f59e0b; border-bottom-color: #f59e0b; } .col-in_progress .kanban-card { border-left-color: #f59e0b; }
+    .col-interview { border-color: #6366f1; } .col-interview .kanban-header { color: #6366f1; border-bottom-color: #6366f1; } .col-interview .kanban-card { border-left-color: #6366f1; }
+    .col-offered { border-color: #10b981; } .col-offered .kanban-header { color: #10b981; border-bottom-color: #10b981; } .col-offered .kanban-card { border-left-color: #10b981; }
+    .col-rejected { border-color: #ef4444; } .col-rejected .kanban-header { color: #ef4444; border-bottom-color: #ef4444; } .col-rejected .kanban-card { border-left-color: #ef4444; }
+    
+    /* Toast Notification wrapper */
+    .toast-container { z-index: 1060; }
+</style>
+{% endblock %}
+
+{% block title %}Tracker - Kanban{% endblock %}
 
 {% block content %}
-<section class="row mb-5 animate__animated animate__fadeIn">
+<section class="row mb-4 animate__animated animate__fadeIn">
     <div class="col-md-12 text-center">
-        <h2 class="fw-bold mb-3">Application <span class="text-primary">Timeline</span></h2>
-        <p class="text-muted">Track the journey of your current placements in real-time.</p>
+        <h2 class="fw-bold mb-2"><i class="bi bi-kanban"></i> Application <span class="text-primary">Tracker</span></h2>
+        <p class="text-muted">Drag and drop jobs across columns to track your personal placement progress.</p>
     </div>
 </section>
 
-<div class="row">
-    {% for app in applications %}
-    <div class="col-md-12 mb-4 animate__animated animate__fadeInUp">
-        <div class="card border-0 shadow-sm glass-card h-100">
-            <div class="card-body p-4">
-                <div class="row align-items-center">
-                    <!-- Job Details -->
-                    <div class="col-md-4 border-end">
-                        <div class="pe-3">
-                            <span class="badge bg-primary-subtle text-primary mb-2">Applied: {{
-                                app.applied_at.strftime('%Y-%m-%d') }}</span>
-                            <h4 class="fw-bold mb-1">{{ app.position }}</h4>
-                            <p class="text-primary fw-bold mb-3 fs-5">{{ app.company_name }}</p>
-                            <p class="text-muted small mb-0"><i class="bi bi-cash-stack"></i> {{ app.salary }}</p>
-                        </div>
-                    </div>
-
-                    <!-- Kanban Tracker -->
-                    <div class="col-md-8">
-                        <div class="tracker-pipeline px-4 py-3">
-                            <div class="row text-center mb-2">
-                                <!-- Applied Step -->
-                                <div class="col-3">
-                                    <div class="step-icon bg-primary text-white rounded-circle shadow-sm mx-auto mb-2"
-                                        style="width: 40px; height: 40px; line-height: 40px;">
-                                        <i class="bi bi-file-earmark-check"></i>
-                                    </div>
-                                    <h6 class="small fw-bold">Applied</h6>
-                                </div>
-
-                                <!-- Interview Step -->
-                                <div class="col-3 position-relative">
-                                    <div
-                                        class="pipeline-connector {% if app.status in ['interview', 'offered', 'rejected'] %}bg-primary{% else %}bg-light{% endif %}">
-                                    </div>
-                                    <div class="step-icon {% if app.status in ['interview', 'offered', 'rejected'] %}bg-primary text-white shadow-sm{% else %}bg-light text-muted{% endif %} rounded-circle mx-auto mb-2"
-                                        style="width: 40px; height: 40px; line-height: 40px;">
-                                        <i class="bi bi-person-video3"></i>
-                                    </div>
-                                    <h6 class="small fw-bold">Interview</h6>
-                                </div>
-
-                                <!-- Decision Step (Offered or Rejected) -->
-                                <div class="col-6 position-relative">
-                                    <div
-                                        class="pipeline-connector {% if app.status in ['offered', 'rejected'] %}bg-primary{% else %}bg-light{% endif %}">
-                                    </div>
-                                    <div class="step-icon {% if app.status == 'offered' %}bg-success text-white shadow-lg{% elif app.status == 'rejected' %}bg-danger text-white{% else %}bg-light text-muted{% endif %} rounded-circle mx-auto mb-2"
-                                        style="width: 40px; height: 40px; line-height: 40px;">
-                                        <i
-                                            class="bi {% if app.status == 'offered' %}bi-trophy{% else %}bi-envelope{% endif %}"></i>
-                                    </div>
-                                    <h6 class="small fw-bold">
-                                        {% if app.status == 'offered' %}
-                                        <span class="text-success">Offered</span>
-                                        {% elif app.status == 'rejected' %}
-                                        <span class="text-danger">Rejected</span>
-                                        {% else %}
-                                        Decision
-                                        {% endif %}
-                                    </h6>
-                                </div>
-                            </div>
-
-                            <!-- Alert context box for current state -->
-                            <div class="mt-4 text-center">
-                                {% if app.status == 'applied' %}
-                                <div class="alert alert-secondary small mb-0 border-0 rounded-pill">
-                                    <i class="bi bi-hourglass-split"></i> Application is under review by the recruitment
-                                    team.
-                                </div>
-                                {% elif app.status == 'interview' %}
-                                <div class="alert alert-primary bg-primary-subtle border-0 mb-0 shadow-sm rounded-3">
-                                    <h6 class="mb-1"><i class="bi bi-calendar2-check"></i> Excellent News! Interview
-                                        Scheduled.</h6>
-                                    <p class="small mb-0 fw-bold">Date: {{ app.interview_date.strftime('%A, %b %d, %Y')
-                                        }} at {{ app.interview_date.strftime('%I:%M %p') }}</p>
-                                </div>
-                                {% elif app.status == 'offered' %}
-                                <div class="alert alert-success border-0 mb-0 shadow-sm rounded-3 fw-bold">
-                                    <i class="bi bi-stars"></i> Congratulations! You have received an offer. Check your
-                                    email for details.
-                                </div>
-                                {% elif app.status == 'rejected' %}
-                                <div class="alert alert-danger mb-0 border-0 rounded-3 small">
-                                    <i class="bi bi-info-circle"></i> Although this application wasn't successful, keep
-                                    applying to other opportunities!
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
+<!-- Notification Toast -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="statusToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body fw-bold" id="toastMessage">
+                <i class="bi bi-check-circle me-2"></i>Status Updated Successfully!
             </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
         </div>
     </div>
-    {% else %}
-    <div class="col-12 text-center py-5">
-        <h3 class="text-muted"><i class="bi bi-folder-x display-1 d-block mb-3"></i>No applications yet!</h3>
-        <p>Your journey starts when you apply for your first role.</p>
-        <a href="{{ url_for('student_dashboard') }}" class="btn btn-primary px-4 mt-3">Browse Opportunities</a>
+</div>
+
+<div class="kanban-board px-2 animate__animated animate__fadeInUp">
+    
+    {% set columns = [
+        ('saved', 'Need to Apply', 'bi-bookmark', 'col-saved'),
+        ('applied', 'Applied', 'bi-file-arrow-up', 'col-applied'),
+        ('in_progress', 'In Progress', 'bi-hourglass-split', 'col-in_progress'),
+        ('interview', 'Interview', 'bi-person-video3', 'col-interview'),
+        ('offered', 'Offer Received', 'bi-trophy', 'col-offered'),
+        ('rejected', 'Rejected', 'bi-x-circle', 'col-rejected')
+    ] %}
+
+    {% for status_id, title, icon, color_class in columns %}
+    <div class="kanban-column {{ color_class }}">
+        <div class="kanban-header">
+            <span><i class="bi {{ icon }} me-2"></i>{{ title }}</span>
+            <span class="badge bg-secondary rounded-pill shadow-sm count-badge">
+                {{ applications|selectattr('status', 'equalto', status_id)|list|length }}
+            </span>
+        </div>
+        
+        <div class="kanban-cards sortable-list" data-status="{{ status_id }}">
+            {% for app in applications if app.status == status_id %}
+            <div class="kanban-card" data-id="{{ app.id }}">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="fw-bold mb-0 text-dark">{{ app.position }}</h6>
+                </div>
+                <p class="text-primary fw-bold small mb-2"><i class="bi bi-building"></i> {{ app.company_name }}</p>
+                <p class="text-muted small mb-2 text-truncate">{{ app.description[:60] }}...</p>
+                
+                {% if app.interview_date %}
+                <div class="alert alert-info py-1 px-2 mb-0 small mt-2">
+                    <i class="bi bi-calendar-event"></i> {{ app.interview_date.strftime('%b %d, %H:%M') }}
+                </div>
+                {% else %}
+                <p class="text-muted small mb-0"><i class="bi bi-clock-history"></i> {{ app.applied_at.strftime('%m/%d/%Y') }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
     </div>
     {% endfor %}
+
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const columns = document.querySelectorAll('.sortable-list');
+    const toastEl = document.getElementById('statusToast');
+    const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+
+    columns.forEach(col => {
+        new Sortable(col, {
+            group: 'kanban',
+            animation: 150,
+            ghostClass: 'ghost-card',
+            onEnd: function (evt) {
+                const itemEl = evt.item;
+                const newCol = evt.to;
+                // If it wasn't moved to a new column, do nothing
+                if (evt.from === newCol) return;
+
+                const appId = itemEl.getAttribute('data-id');
+                const newStatus = newCol.getAttribute('data-status');
+                
+                // Update Badge Counts
+                const oldHeaderBadge = evt.from.closest('.kanban-column').querySelector('.count-badge');
+                const newHeaderBadge = evt.to.closest('.kanban-column').querySelector('.count-badge');
+                oldHeaderBadge.textContent = Math.max(0, parseInt(oldHeaderBadge.textContent) - 1);
+                newHeaderBadge.textContent = parseInt(newHeaderBadge.textContent) + 1;
+
+                // Send AJAX Request to update backend
+                $.ajax({
+                    url: "{{ url_for('update_status_ajax') }}",
+                    method: 'POST',
+                    data: {
+                        app_id: appId,
+                        new_status: newStatus
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            toastEl.classList.remove('text-bg-danger');
+                            toastEl.classList.add('text-bg-success');
+                            document.getElementById('toastMessage').innerHTML = `<i class="bi bi-check-circle me-2"></i> Moved to ${newStatus.replace('_', ' ').toUpperCase()}!`;
+                            toast.show();
+                        }
+                    },
+                    error: function(err) {
+                        toastEl.classList.remove('text-bg-success');
+                        toastEl.classList.add('text-bg-danger');
+                        document.getElementById('toastMessage').innerHTML = `<i class="bi bi-exclamation-triangle me-2"></i> Failed to update application`;
+                        toast.show();
+                    }
+                });
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

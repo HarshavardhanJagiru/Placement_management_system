@@ -1,5 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import pymysql
+import random
+from datetime import datetime, timedelta
+from utils import send_otp_email
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Change this for production
@@ -29,6 +32,11 @@ def login():
                 cursor.execute("SELECT * FROM users WHERE username = %s AND password = %s", (username, password))
                 user = cursor.fetchone()
                 if user:
+                    if not user['is_verified']:
+                        session['pending_user_id'] = user['id']
+                        flash('Please verify your email address before logging in.', 'warning')
+                        return redirect(url_for('verify_email'))
+
                     session['user_id'] = user['id']
                     session['role'] = user['role']
                     session['username'] = user['username']
@@ -55,16 +63,25 @@ def register():
         db = get_db_connection()
         try:
             with db.cursor() as cursor:
-                # Insert into users
-                cursor.execute("INSERT INTO users (username, email, password, role) VALUES (%s, %s, %s, 'student')", 
-                             (username, email, password))
+                # Generate 6 digit OTP
+                otp_code = f"{random.randint(100000, 999999)}"
+                otp_expiry = datetime.now() + timedelta(minutes=15)
+
+                cursor.execute("INSERT INTO users (username, email, password, role, is_verified, otp_code, otp_expiry) VALUES (%s, %s, %s, 'student', FALSE, %s, %s)", 
+                             (username, email, password, otp_code, otp_expiry))
                 user_id = cursor.lastrowid
-                # Insert into students
+                
                 cursor.execute("INSERT INTO students (user_id, full_name, department, cgpa) VALUES (%s, %s, %s, %s)", 
                              (user_id, full_name, department, cgpa))
                 db.commit()
-                flash('Registration successful! Please login.', 'success')
-                return redirect(url_for('login'))
+                
+                # Send the OTP via Email
+                send_otp_email(email, otp_code)
+                
+                # Setup session for verification
+                session['pending_user_id'] = user_id
+                flash('Registration almost complete! We sent a 6-digit code to your email.', 'info')
+                return redirect(url_for('verify_email'))
         except Exception as e:
             db.rollback()
             flash(f'Error: {str(e)}', 'error')
@@ -77,6 +94,51 @@ def logout():
     session.clear()
     flash('You have been logged out.', 'info')
     return redirect(url_for('login'))
+
+@app.route('/verify_email', methods=['GET', 'POST'])
+def verify_email():
+    if 'pending_user_id' not in session:
+        return redirect(url_for('login'))
+        
+    if request.method == 'POST':
+        submitted_otp = request.form['otp_code']
+        user_id = session['pending_user_id']
+        
+        db = get_db_connection()
+        try:
+            with db.cursor() as cursor:
+                cursor.execute("SELECT otp_code, otp_expiry FROM users WHERE id = %s", (user_id,))
+                user = cursor.fetchone()
+                
+                if user and user['otp_code'] == submitted_otp:
+                    if datetime.now() <= user['otp_expiry']:
+                        # Valid OTP! Activate the user
+                        cursor.execute("UPDATE users SET is_verified = TRUE, otp_code = NULL, otp_expiry = NULL WHERE id = %s", (user_id,))
+                        
+                        # Automatically log them in
+                        cursor.execute("SELECT username, role FROM users WHERE id = %s", (user_id,))
+                        active_user = cursor.fetchone()
+                        
+                        session['user_id'] = user_id
+                        session['username'] = active_user['username']
+                        session['role'] = active_user['role']
+                        
+                        session.pop('pending_user_id', None)
+                        db.commit()
+                        
+                        flash('Email verified successfully! Welcome to your dashboard.', 'success')
+                        return redirect(url_for('student_dashboard'))
+                    else:
+                        flash('Your verification code has expired. Please register again.', 'error')
+                else:
+                    flash('Invalid verification code. Please try again.', 'error')
+        except Exception as e:
+            db.rollback()
+            flash(f'Error validating OTP: {str(e)}', 'error')
+        finally:
+            db.close()
+            
+    return render_template('verify_email.html')
 
 @app.route('/student/dashboard')
 def student_dashboard():

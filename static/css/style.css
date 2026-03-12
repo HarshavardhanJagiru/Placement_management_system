@@ -48,3 +48,27 @@ body {
     background: var(--primary-gradient);
     font-weight: 600;
 }
+
+/* Kanban Timeline Styles */
+.pipeline-connector {
+    position: absolute;
+    top: 20px;
+    left: -50%;
+    width: 100%;
+    height: 3px;
+    z-index: 0;
+}
+
+.step-icon {
+    position: relative;
+    z-index: 1;
+    transition: transform 0.3s ease;
+}
+
+.job-card:hover .step-icon {
+    transform: scale(1.1);
+}
+
+.alert {
+    animation: fadeIn 0.5s ease-in-out;
+}

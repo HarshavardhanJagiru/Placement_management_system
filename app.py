@@ -110,11 +110,11 @@ def admin_dashboard():
             
             # Application list for management
             cursor.execute("""
-                SELECT a.id, a.status, j.position, j.company_name, s.full_name 
+                SELECT a.id, a.status, a.interview_date, j.position, j.company_name, s.full_name, a.date_applied AS applied_at
                 FROM applications a
                 JOIN jobs j ON a.job_id = j.id
                 JOIN students s ON a.student_id = s.id
-                ORDER BY a.applied_at DESC
+                ORDER BY a.date_applied DESC
             """)
             applications = cursor.fetchall()
 
@@ -141,6 +141,25 @@ def update_status(app_id, status):
             cursor.execute("UPDATE applications SET status = %s WHERE id = %s", (status, app_id))
             db.commit()
             flash(f'Application {status}!', 'success')
+    finally:
+        db.close()
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/schedule_interview/<int:app_id>', methods=['POST'])
+def schedule_interview(app_id):
+    if 'user_id' not in session or session['role'] != 'admin':
+        return redirect(url_for('login'))
+    
+    interview_date = request.form['interview_date']
+    db = get_db_connection()
+    try:
+        with db.cursor() as cursor:
+            cursor.execute("UPDATE applications SET status = 'interview', interview_date = %s WHERE id = %s", (interview_date, app_id))
+            db.commit()
+            flash('Interview successfully scheduled!', 'success')
+    except Exception as e:
+        db.rollback()
+        flash(f'Error: {str(e)}', 'error')
     finally:
         db.close()
     return redirect(url_for('admin_dashboard'))
@@ -182,16 +201,67 @@ def my_applications():
             cursor.execute("SELECT id FROM students WHERE user_id = %s", (session['user_id'],))
             student = cursor.fetchone()
             cursor.execute("""
-                SELECT a.status, a.applied_at, j.position, j.company_name 
+                SELECT a.status, a.date_applied AS applied_at, a.interview_date, j.position, j.company_name, j.description, j.salary 
                 FROM applications a
                 JOIN jobs j ON a.job_id = j.id
                 WHERE a.student_id = %s
-                ORDER BY a.applied_at DESC
+                ORDER BY a.date_applied DESC
             """, (student['id'],))
             apps = cursor.fetchall()
         return render_template('my_applications.html', applications=apps)
     finally:
         db.close()
+
+@app.route('/admin/add_job', methods=['POST'])
+def add_job():
+    if 'user_id' not in session or session['role'] != 'admin':
+        return redirect(url_for('login'))
+    
+    company_name = request.form['company_name']
+    position = request.form['position']
+    salary = request.form['salary']
+    deadline = request.form['deadline']
+    description = request.form['description']
+    
+    db = get_db_connection()
+    try:
+        with db.cursor() as cursor:
+            cursor.execute("INSERT INTO jobs (company_name, position, salary, deadline, description) VALUES (%s, %s, %s, %s, %s)", 
+                         (company_name, position, salary, deadline, description))
+            db.commit()
+            flash('Job posted successfully!', 'success')
+    except Exception as e:
+        db.rollback()
+        flash(f'Error: {str(e)}', 'error')
+    finally:
+        db.close()
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/student/apply/<int:job_id>', methods=['POST'])
+def apply(job_id):
+    if 'user_id' not in session or session['role'] != 'student':
+        return redirect(url_for('login'))
+    
+    db = get_db_connection()
+    try:
+        with db.cursor() as cursor:
+            # Get student id
+            cursor.execute("SELECT id FROM students WHERE user_id = %s", (session['user_id'],))
+            student = cursor.fetchone()
+            # Check if already applied
+            cursor.execute("SELECT * FROM applications WHERE job_id = %s AND student_id = %s", (job_id, student['id']))
+            if cursor.fetchone():
+                flash('You have already applied for this job.', 'warning')
+            else:
+                cursor.execute("INSERT INTO applications (job_id, student_id) VALUES (%s, %s)", (job_id, student['id']))
+                db.commit()
+                flash('Application submitted successfully!', 'success')
+    except Exception as e:
+        db.rollback()
+        flash(f'Error: {str(e)}', 'error')
+    finally:
+        db.close()
+    return redirect(url_for('student_dashboard'))
 
 if __name__ == '__main__':
     app.run(debug=True)

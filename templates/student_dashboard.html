@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}Student Dashboard - Placement Management System{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2 class="fw-bold">Welcome, <span class="text-primary">{{ session.username }}</span></h2>
+        <p class="text-muted">Explore available placement opportunities and track your applications.</p>
+    </div>
+</div>
+
+<div class="row">
+    {% for job in jobs %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="badge bg-primary-subtle text-primary px-3 py-2">Full Time</span>
+                    <small class="text-muted">Applied: {{ job.created_at.strftime('%Y-%m-%d') }}</small>
+                </div>
+                <h5 class="fw-bold mb-1">{{ job.position }}</h5>
+                <p class="text-primary fw-bold mb-3">{{ job.company_name }}</p>
+                <div class="mb-3 small text-muted">
+                    <i class="bi bi-cash-stack"></i> <strong>Salary:</strong> {{ job.salary }}<br>
+                    <i class="bi bi-calendar-event"></i> <strong>Deadline:</strong> {{ job.deadline }}
+                </div>
+                <p class="card-text small text-secondary mb-4">{{ job.description[:100] }}...</p>
+                
+                {% if job.id in applied_jobs %}
+                    <button class="btn btn-secondary w-100 disabled">Already Applied</button>
+                {% else %}
+                    <form action="{{ url_for('apply', job_id=job.id) }}" method="POST">
+                        <button type="submit" class="btn btn-primary w-100">Apply Now</button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

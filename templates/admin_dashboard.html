@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard - Placement Management System{% endblock %}
+
+{% block content %}
+<section class="row mb-4">
+    <div class="col-md-8">
+        <h2 class="fw-bold">Admin <span class="text-primary">Dashboard</span></h2>
+        <p class="text-muted">Manage job postings and student applications.</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addJobModal">Post New Job</button>
+    </div>
+</section>
+
+<section class="row mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-3">
+            <h5 class="text-muted small text-uppercase fw-bold">Total Students</h5>
+            <h2 class="fw-bold mb-0">{{ student_count }}</h2>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-3">
+            <h5 class="text-muted small text-uppercase fw-bold">Active Jobs</h5>
+            <h2 class="fw-bold mb-0">{{ jobs|length }}</h2>
+        </div>
+    </div>
+</section>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <h5 class="fw-bold mb-4">Recent Job Postings</h5>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Company</th>
+                        <th>Position</th>
+                        <th>Deadline</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for job in jobs %}
+                    <tr>
+                        <td class="fw-bold">{{ job.company_name }}</td>
+                        <td>{{ job.position }}</td>
+                        <td>{{ job.deadline }}</td>
+                        <td>
+                            <a href="#" class="btn btn-sm btn-outline-primary">View Apps</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Job Modal -->
+<div class="modal fade" id="addJobModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">Post New Job</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('add_job') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Company Name</label>
+                        <input type="text" name="company_name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Position</label>
+                        <input type="text" name="position" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Salary</label>
+                        <input type="text" name="salary" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Deadline</label>
+                        <input type="date" name="deadline" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="submit" class="btn btn-primary w-100">Post Job</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -34,14 +34,23 @@ $(document).ready(function() {
         }
     });
 
-    // Fade out alerts after 3 seconds
-    setTimeout(function() {
-        $('.alert').fadeOut('slow');
-    }, 3000);
+    // Real-time job filtering on student dashboard
+    $('#jobSearch').on('keyup', function() {
+        const query = $(this).val().toLowerCase();
+        $('.job-card').each(function() {
+            const position = $(this).find('.card-title').text().toLowerCase();
+            const company = $(this).find('.card-company').text().toLowerCase();
+            
+            if (position.includes(query) || company.includes(query)) {
+                $(this).fadeIn();
+            } else {
+                $(this).fadeOut();
+            }
+        });
+    });
 
-    // Simple UI effect: Highlight table rows on hover
-    $('tbody tr').hover(
-        function() { $(this).addClass('bg-light'); },
-        function() { $(this).removeClass('bg-light'); }
-    );
+    // Custom Toast Notification simulation using Alerts
+    if ($('.alert').length) {
+        $('.alert').addClass('shadow-lg animate__animated animate__fadeInRight');
+    }
 });

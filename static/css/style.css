@@ -35,7 +35,16 @@ body {
     border: 1px solid #e2e8f0;
 }
 
-.form-control:focus {
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-    border-color: #6366f1;
+.job-card {
+    transition: all 0.3s ease;
+}
+
+.transition-hover:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 25px -5px rgba(99, 102, 241, 0.2);
+}
+
+.nav-pills .nav-link.active {
+    background: var(--primary-gradient);
+    font-weight: 600;
 }

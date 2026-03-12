@@ -3,40 +3,54 @@
 {% block title %}Student Dashboard - Placement Management System{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-12">
-        <h2 class="fw-bold">Welcome, <span class="text-primary">{{ session.username }}</span></h2>
-        <p class="text-muted">Explore available placement opportunities and track your applications.</p>
+<section class="row mb-4 align-items-center">
+    <div class="col-md-6">
+        <h2 class="fw-bold">Candidate <span class="text-primary">Portal</span></h2>
+        <p class="text-muted">Active opportunities for <strong>{{ session.username }}</strong></p>
     </div>
-</div>
+    <div class="col-md-6 text-end">
+        <a href="{{ url_for('profile') }}" class="btn btn-outline-primary px-4 me-2">My Profile</a>
+        <a href="{{ url_for('my_applications') }}" class="btn btn-primary px-4 shadow-sm">My Applications</a>
+    </div>
+</section>
 
-<div class="row">
+<section class="mb-5">
+    <div class="card border-0 shadow-sm p-2">
+        <div class="input-group">
+            <span class="input-group-text bg-white border-0"><i class="bi bi-search"></i></span>
+            <input type="text" id="jobSearch" class="form-control border-0"
+                placeholder="Search by company or position...">
+        </div>
+    </div>
+</section>
+
+<section class="row" id="jobContainer">
     {% for job in jobs %}
-    <div class="col-md-6 col-lg-4 mb-4">
-        <div class="card border-0 shadow-sm h-100">
+    <div class="col-md-6 col-lg-4 mb-4 job-card">
+        <div class="card border-0 shadow-sm h-100 transition-hover">
             <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <span class="badge bg-primary-subtle text-primary px-3 py-2">Full Time</span>
-                    <small class="text-muted">Applied: {{ job.created_at.strftime('%Y-%m-%d') }}</small>
+                <div class="mb-3">
+                    <span class="badge bg-primary px-3 mb-2">HOT JOB</span>
+                    <h5 class="fw-bold mb-1 card-title">{{ job.position }}</h5>
+                    <p class="text-primary fw-bold mb-0 card-company">{{ job.company_name }}</p>
                 </div>
-                <h5 class="fw-bold mb-1">{{ job.position }}</h5>
-                <p class="text-primary fw-bold mb-3">{{ job.company_name }}</p>
+                <hr class="opacity-10">
                 <div class="mb-3 small text-muted">
-                    <i class="bi bi-cash-stack"></i> <strong>Salary:</strong> {{ job.salary }}<br>
-                    <i class="bi bi-calendar-event"></i> <strong>Deadline:</strong> {{ job.deadline }}
+                    <p class="mb-1">💰 <strong>Salary:</strong> {{ job.salary }}</p>
+                    <p class="mb-1">⏳ <strong>Deadline:</strong> {{ job.deadline }}</p>
                 </div>
-                <p class="card-text small text-secondary mb-4">{{ job.description[:100] }}...</p>
-                
+                <p class="card-text small text-secondary mb-4">{{ job.description[:120] }}...</p>
+
                 {% if job.id in applied_jobs %}
-                    <button class="btn btn-secondary w-100 disabled">Already Applied</button>
+                <button class="btn btn-success w-100 disabled"><i class="bi bi-check-circle"></i> Applied</button>
                 {% else %}
-                    <form action="{{ url_for('apply', job_id=job.id) }}" method="POST">
-                        <button type="submit" class="btn btn-primary w-100">Apply Now</button>
-                    </form>
+                <form action="{{ url_for('apply', job_id=job.id) }}" method="POST">
+                    <button type="submit" class="btn btn-primary w-100 py-2">Apply Now</button>
+                </form>
                 {% endif %}
             </div>
         </div>
     </div>
     {% endfor %}
-</div>
+</section>
 {% endblock %}

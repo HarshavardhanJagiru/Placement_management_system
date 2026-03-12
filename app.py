@@ -172,13 +172,29 @@ def admin_dashboard():
             
             # Application list for management
             cursor.execute("""
-                SELECT a.id, a.status, a.interview_date, j.position, j.company_name, s.full_name, a.date_applied AS applied_at
+                SELECT a.id, a.status, a.interview_date, j.position, j.company_name, 
+                       s.full_name, s.skills as student_skills, j.required_skills as job_skills,
+                       a.date_applied AS applied_at
                 FROM applications a
                 JOIN jobs j ON a.job_id = j.id
                 JOIN students s ON a.student_id = s.id
                 ORDER BY a.date_applied DESC
             """)
-            applications = cursor.fetchall()
+            raw_applications = cursor.fetchall()
+
+            # Calculate match scores
+            applications = []
+            for app_data in raw_applications:
+                score = 0
+                if app_data['student_skills'] and app_data['job_skills']:
+                    s_skills = set(s.strip().lower() for s in app_data['student_skills'].split(',') if s.strip())
+                    j_skills = set(s.strip().lower() for s in app_data['job_skills'].split(',') if s.strip())
+                    if j_skills:
+                        intersection = s_skills.intersection(j_skills)
+                        score = int((len(intersection) / len(j_skills)) * 100)
+                
+                app_data['match_score'] = score
+                applications.append(app_data)
 
             # Stats for Chart.js
             cursor.execute("SELECT status, COUNT(*) as count FROM applications GROUP BY status")
@@ -239,10 +255,11 @@ def profile():
                 department = request.form['department']
                 cgpa = request.form['cgpa']
                 resume_url = request.form['resume_url']
+                skills = request.form['skills']
                 cursor.execute("""
-                    UPDATE students SET full_name=%s, department=%s, cgpa=%s, resume_url=%s 
+                    UPDATE students SET full_name=%s, department=%s, cgpa=%s, resume_url=%s, skills=%s
                     WHERE user_id=%s
-                """, (full_name, department, cgpa, resume_url, session['user_id']))
+                """, (full_name, department, cgpa, resume_url, skills, session['user_id']))
                 db.commit()
                 flash('Profile updated!', 'success')
             
@@ -284,12 +301,13 @@ def add_job():
     salary = request.form['salary']
     deadline = request.form['deadline']
     description = request.form['description']
+    required_skills = request.form['required_skills']
     
     db = get_db_connection()
     try:
         with db.cursor() as cursor:
-            cursor.execute("INSERT INTO jobs (company_name, position, salary, deadline, description) VALUES (%s, %s, %s, %s, %s)", 
-                         (company_name, position, salary, deadline, description))
+            cursor.execute("INSERT INTO jobs (company_name, position, salary, deadline, description, required_skills) VALUES (%s, %s, %s, %s, %s, %s)", 
+                         (company_name, position, salary, deadline, description, required_skills))
             db.commit()
             flash('Job posted successfully!', 'success')
     except Exception as e:

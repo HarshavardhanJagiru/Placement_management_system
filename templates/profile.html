@@ -29,6 +29,11 @@
                             <input type="url" name="resume_url" class="form-control" value="{{ student.resume_url }}" placeholder="https://...">
                         </div>
                     </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Skills (comma separated)</label>
+                        <textarea name="skills" class="form-control" rows="3" placeholder="Python, React, SQL, AWS, Machine Learning...">{{ student.skills if student.skills else '' }}</textarea>
+                        <small class="text-muted">Enter your expert skills separated by commas.</small>
+                    </div>
                     <button type="submit" class="btn btn-primary px-4 py-2">Update Profile</button>
                 </form>
             </div>

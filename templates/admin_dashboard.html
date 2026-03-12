@@ -9,51 +9,140 @@
         <p class="text-muted">Manage job postings and student applications.</p>
     </div>
     <div class="col-md-4 text-end">
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addJobModal">Post New Job</button>
+        <button class="btn btn-primary shadow-sm rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#addJobModal">
+            <i class="bi bi-plus-circle me-2"></i>Post New Job
+        </button>
     </div>
 </section>
 
-<section class="row mb-4">
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm p-3">
-            <h5 class="text-muted small text-uppercase fw-bold">Total Students</h5>
-            <h2 class="fw-bold mb-0">{{ student_count }}</h2>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm p-3">
-            <h5 class="text-muted small text-uppercase fw-bold">Active Jobs</h5>
-            <h2 class="fw-bold mb-0">{{ jobs|length }}</h2>
-        </div>
-    </div>
-</section>
+<ul class="nav nav-pills mb-4" id="adminTabs" role="tablist">
+    <li class="nav-item">
+        <button class="nav-link active rounded-pill px-4 me-2" data-bs-toggle="pill" data-bs-target="#jobs-tab">Active Jobs</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#apps-tab">Manage Applications</button>
+    </li>
+</ul>
 
-<div class="card border-0 shadow-sm">
-    <div class="card-body">
-        <h5 class="fw-bold mb-4">Recent Job Postings</h5>
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>Company</th>
-                        <th>Position</th>
-                        <th>Deadline</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for job in jobs %}
-                    <tr>
-                        <td class="fw-bold">{{ job.company_name }}</td>
-                        <td>{{ job.position }}</td>
-                        <td>{{ job.deadline }}</td>
-                        <td>
-                            <a href="#" class="btn btn-sm btn-outline-primary">View Apps</a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+<div class="tab-content">
+    <!-- Jobs Tab -->
+    <div class="tab-pane fade show active" id="jobs-tab">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="fw-bold mb-4">Recent Job Postings</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Company</th>
+                                <th>Position</th>
+                                <th>Deadline</th>
+                                <th>Required Skills</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for job in jobs %}
+                            <tr>
+                                <td class="fw-bold">{{ job.company_name }}</td>
+                                <td>{{ job.position }}</td>
+                                <td>{{ job.deadline }}</td>
+                                <td><span class="badge bg-info-subtle text-info">{{ job.required_skills if job.required_skills else 'None' }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Applications Tab -->
+    <div class="tab-pane fade" id="apps-tab">
+        <div class="card border-0 shadow-sm glass-card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light text-secondary small text-uppercase fw-bold">
+                            <tr>
+                                <th>Candidate</th>
+                                <th>ATS Score</th>
+                                <th>Role</th>
+                                <th>Company</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for app in applications %}
+                            <tr class="animate__animated animate__fadeIn">
+                                <td>
+                                    <div class="fw-bold">{{ app.full_name }}</div>
+                                    <div class="small text-muted">{{ app.applied_at }}</div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress flex-grow-1 me-2" style="height: 6px; width: 60px;">
+                                            <div class="progress-bar {% if app.match_score >= 80 %}bg-success{% elif app.match_score >= 50 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                                 role="progressbar" style="width: {{ app.match_score }}%"></div>
+                                        </div>
+                                        <span class="fw-bold {% if app.match_score >= 80 %}text-success{% elif app.match_score >= 50 %}text-warning{% else %}text-danger{% endif %}">
+                                            {{ app.match_score }}%
+                                        </span>
+                                    </div>
+                                </td>
+                                <td>{{ app.position }}</td>
+                                <td>{{ app.company_name }}</td>
+                                <td>
+                                    {% if app.status == 'applied' %}
+                                    <span class="badge bg-primary">Applied</span>
+                                    {% elif app.status == 'interview' %}
+                                    <span class="badge bg-info">Interview: {{ app.interview_date }}</span>
+                                    {% elif app.status == 'offered' %}
+                                    <span class="badge bg-success text-white">Offered</span>
+                                    {% elif app.status == 'rejected' %}
+                                    <span class="badge bg-danger">Rejected</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-light border dropdown-toggle" type="button" data-bs-toggle="dropdown">Action</button>
+                                        <ul class="dropdown-menu shadow border-0">
+                                            <li><button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#interviewModal{{ app.id }}">Schedule Interview</button></li>
+                                            <li><a class="dropdown-item text-success" href="{{ url_for('update_status', app_id=app.id, status='offered') }}">Give Offer</a></li>
+                                            <li><a class="dropdown-item text-danger" href="{{ url_for('update_status', app_id=app.id, status='rejected') }}">Reject</a></li>
+                                        </ul>
+                                    </div>
+
+                                    <!-- Interview Modal -->
+                                    <div class="modal fade" id="interviewModal{{ app.id }}" tabindex="-1">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content border-0 shadow">
+                                                <div class="modal-header border-0">
+                                                    <h5 class="modal-title fw-bold">Schedule Interview</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <form action="{{ url_for('schedule_interview', app_id=app.id) }}" method="POST">
+                                                    <div class="modal-body">
+                                                        <p class="small text-muted mb-3">Scheduling interview for <strong>{{ app.full_name }}</strong> at <strong>{{ app.company_name }}</strong>.</p>
+                                                        <div class="mb-3">
+                                                            <label class="form-label">Date & Time</label>
+                                                            <input type="datetime-local" name="interview_date" class="form-control" required>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer border-0">
+                                                        <button type="submit" class="btn btn-primary w-100 py-2 rounded-pill">Confirm Schedule</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -87,6 +176,10 @@
                     <div class="mb-3">
                         <label class="form-label">Description</label>
                         <textarea name="description" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Required Skills (comma separated)</label>
+                        <input type="text" name="required_skills" class="form-control" placeholder="Python, SQL, React..." required>
                     </div>
                 </div>
                 <div class="modal-footer border-0">

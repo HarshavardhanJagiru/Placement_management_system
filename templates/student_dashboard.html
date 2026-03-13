@@ -38,25 +38,40 @@
                 <div class="mb-3 small text-muted">
                     <p class="mb-1">💰 <strong>Salary:</strong> {{ job.salary }}</p>
                     <p class="mb-1">⏳ <strong>Deadline:</strong> {{ job.deadline }}</p>
+                    <p class="mb-1">🎓 <strong>Min CGPA:</strong> <span class="badge {{ 'bg-success-subtle text-success' if student.cgpa|float >= job.min_cgpa|float else 'bg-danger-subtle text-danger' }}">{{ job.min_cgpa }}</span></p>
                 </div>
                 <p class="card-text small text-secondary mb-4">{{ job.description[:120] }}...</p>
 
                 {% if job.id in applied_jobs %}
                     {% if applied_jobs[job.id] == 'saved' %}
-                        <form action="{{ url_for('apply', job_id=job.id) }}" method="POST">
-                            <button type="submit" class="btn btn-primary w-100 py-2 mb-2">Apply Now</button>
-                        </form>
+                        {% if student.cgpa|float >= job.min_cgpa|float %}
+                            <form action="{{ url_for('apply', job_id=job.id) }}" method="POST">
+                                <button type="submit" class="btn btn-primary w-100 py-2 mb-2">Apply Now</button>
+                            </form>
+                        {% else %}
+                            <div class="alert alert-danger py-2 mb-2 small text-center">
+                                <i class="bi bi-exclamation-octagon-fill me-1"></i> Not Eligible (CGPA < {{ job.min_cgpa }})
+                            </div>
+                        {% endif %}
                         <button class="btn btn-outline-secondary w-100 disabled"><i class="bi bi-bookmark-check"></i> Saved to Board</button>
                     {% else %}
                         <button class="btn btn-success w-100 py-2 disabled"><i class="bi bi-check-circle"></i> Tracking in Kanban</button>
                     {% endif %}
                 {% else %}
-                <form action="{{ url_for('apply', job_id=job.id) }}" method="POST" class="mb-2">
-                    <button type="submit" class="btn btn-primary w-100 py-2">Apply Now</button>
-                </form>
-                <form action="{{ url_for('save_job', job_id=job.id) }}" method="POST">
-                    <button type="submit" class="btn btn-outline-secondary w-100 py-2"><i class="bi bi-bookmark"></i> Save to Board</button>
-                </form>
+                    {% if student.cgpa|float >= job.min_cgpa|float %}
+                        <form action="{{ url_for('apply', job_id=job.id) }}" method="POST" class="mb-2">
+                            <button type="submit" class="btn btn-primary w-100 py-2">Apply Now</button>
+                        </form>
+                        <form action="{{ url_for('save_job', job_id=job.id) }}" method="POST">
+                            <button type="submit" class="btn btn-outline-secondary w-100 py-2"><i class="bi bi-bookmark"></i> Save to Board</button>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-danger py-3 mb-0 text-center">
+                            <i class="bi bi-lock-fill d-block mb-1 fs-4"></i>
+                            <div class="fw-bold">Ineligible</div>
+                            <div class="small">CGPA requirement: {{ job.min_cgpa }}</div>
+                        </div>
+                    {% endif %}
                 {% endif %}
             </div>
         </div>

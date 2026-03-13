@@ -152,12 +152,12 @@ def student_dashboard():
         with db.cursor() as cursor:
             cursor.execute("SELECT * FROM jobs ORDER BY created_at DESC")
             jobs = cursor.fetchall()
-            # Get user's applications
-            cursor.execute("SELECT students.id FROM students WHERE user_id = %s", (session['user_id'],))
+            # Get user's student record + CGPA
+            cursor.execute("SELECT * FROM students WHERE user_id = %s", (session['user_id'],))
             student = cursor.fetchone()
             cursor.execute("SELECT job_id, status FROM applications WHERE student_id = %s", (student['id'],))
             applied_jobs = {app['job_id']: app['status'] for app in cursor.fetchall()}
-        return render_template('student_dashboard.html', jobs=jobs, applied_jobs=applied_jobs)
+        return render_template('student_dashboard.html', jobs=jobs, applied_jobs=applied_jobs, student=student)
     finally:
         db.close()
 
@@ -377,14 +377,61 @@ def add_job():
     deadline = request.form['deadline']
     description = request.form['description']
     required_skills = request.form['required_skills']
+    min_cgpa = request.form.get('min_cgpa', 0.0)
     
     db = get_db_connection()
     try:
         with db.cursor() as cursor:
-            cursor.execute("INSERT INTO jobs (company_name, position, salary, deadline, description, required_skills) VALUES (%s, %s, %s, %s, %s, %s)", 
-                         (company_name, position, salary, deadline, description, required_skills))
+            cursor.execute("INSERT INTO jobs (company_name, position, salary, deadline, description, required_skills, min_cgpa) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                         (company_name, position, salary, deadline, description, required_skills, min_cgpa))
             db.commit()
             flash('Job posted successfully!', 'success')
+    except Exception as e:
+        db.rollback()
+        flash(f'Error: {str(e)}', 'error')
+    finally:
+        db.close()
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/edit_job/<int:job_id>', methods=['POST'])
+def edit_job(job_id):
+    if 'user_id' not in session or session['role'] != 'admin':
+        return redirect(url_for('login'))
+    
+    company_name = request.form['company_name']
+    position = request.form['position']
+    salary = request.form['salary']
+    deadline = request.form['deadline']
+    description = request.form['description']
+    required_skills = request.form['required_skills']
+    min_cgpa = request.form.get('min_cgpa', 0.0)
+    
+    db = get_db_connection()
+    try:
+        with db.cursor() as cursor:
+            cursor.execute("""UPDATE jobs SET company_name=%s, position=%s, salary=%s, deadline=%s, 
+                           description=%s, required_skills=%s, min_cgpa=%s WHERE id=%s""",
+                         (company_name, position, salary, deadline, description, required_skills, min_cgpa, job_id))
+            db.commit()
+            flash('Job updated successfully!', 'success')
+    except Exception as e:
+        db.rollback()
+        flash(f'Error: {str(e)}', 'error')
+    finally:
+        db.close()
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/delete_job/<int:job_id>', methods=['POST'])
+def delete_job(job_id):
+    if 'user_id' not in session or session['role'] != 'admin':
+        return redirect(url_for('login'))
+    
+    db = get_db_connection()
+    try:
+        with db.cursor() as cursor:
+            cursor.execute("DELETE FROM jobs WHERE id = %s", (job_id,))
+            db.commit()
+            flash('Job deleted successfully!', 'success')
     except Exception as e:
         db.rollback()
         flash(f'Error: {str(e)}', 'error')
@@ -400,9 +447,17 @@ def apply(job_id):
     db = get_db_connection()
     try:
         with db.cursor() as cursor:
-            # Get student id
-            cursor.execute("SELECT id FROM students WHERE user_id = %s", (session['user_id'],))
+            # Get student info including CGPA
+            cursor.execute("SELECT id, cgpa FROM students WHERE user_id = %s", (session['user_id'],))
             student = cursor.fetchone()
+            
+            # Check CGPA eligibility
+            cursor.execute("SELECT min_cgpa FROM jobs WHERE id = %s", (job_id,))
+            job = cursor.fetchone()
+            if job and job['min_cgpa'] and student['cgpa'] and float(student['cgpa']) < float(job['min_cgpa']):
+                flash(f'You are not eligible for this job. Minimum CGPA required: {job["min_cgpa"]}. Your CGPA: {student["cgpa"]}.', 'error')
+                return redirect(url_for('student_dashboard'))
+            
             # Check if already applied
             cursor.execute("SELECT * FROM applications WHERE job_id = %s AND student_id = %s", (job_id, student['id']))
             existing = cursor.fetchone()

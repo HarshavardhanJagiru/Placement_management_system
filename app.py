@@ -219,6 +219,21 @@ def update_status(app_id, status):
     try:
         with db.cursor() as cursor:
             cursor.execute("UPDATE applications SET status = %s WHERE id = %s", (status, app_id))
+            
+            # Auto-create notification for the student
+            cursor.execute("""
+                SELECT s.user_id, j.company_name, j.position 
+                FROM applications a 
+                JOIN students s ON a.student_id = s.id 
+                JOIN jobs j ON a.job_id = j.id 
+                WHERE a.id = %s
+            """, (app_id,))
+            app_info = cursor.fetchone()
+            if app_info:
+                status_labels = {'offered': '🎉 Congratulations! You received an Offer', 'rejected': '❌ Unfortunately, your application was Rejected', 'interview': '📅 You have been scheduled for an Interview'}
+                msg = f"{status_labels.get(status, status.title())} for {app_info['position']} at {app_info['company_name']}."
+                cursor.execute("INSERT INTO notifications (user_id, message) VALUES (%s, %s)", (app_info['user_id'], msg))
+            
             db.commit()
             flash(f'Application {status}!', 'success')
     finally:
@@ -235,6 +250,20 @@ def schedule_interview(app_id):
     try:
         with db.cursor() as cursor:
             cursor.execute("UPDATE applications SET status = 'interview', interview_date = %s WHERE id = %s", (interview_date, app_id))
+            
+            # Auto-create notification
+            cursor.execute("""
+                SELECT s.user_id, j.company_name, j.position 
+                FROM applications a 
+                JOIN students s ON a.student_id = s.id 
+                JOIN jobs j ON a.job_id = j.id 
+                WHERE a.id = %s
+            """, (app_id,))
+            app_info = cursor.fetchone()
+            if app_info:
+                msg = f"📅 Interview Scheduled for {app_info['position']} at {app_info['company_name']} on {interview_date}."
+                cursor.execute("INSERT INTO notifications (user_id, message) VALUES (%s, %s)", (app_info['user_id'], msg))
+            
             db.commit()
             flash('Interview successfully scheduled!', 'success')
     except Exception as e:
@@ -431,13 +460,19 @@ def update_status_ajax():
     valid_statuses = ['saved', 'applied', 'in_progress', 'interview', 'offered', 'rejected']
     if new_status not in valid_statuses:
         return {'success': False, 'message': 'Invalid status'}, 400
-        
+    
     db = get_db_connection()
     try:
         with db.cursor() as cursor:
             # Verify the student actually owns this application
             cursor.execute("SELECT id FROM students WHERE user_id = %s", (session['user_id'],))
             student = cursor.fetchone()
+            
+            # LOCK: Prevent students from dragging admin-finalized cards
+            cursor.execute("SELECT status FROM applications WHERE id = %s AND student_id = %s", (app_id, student['id']))
+            current = cursor.fetchone()
+            if current and current['status'] in ('offered', 'rejected'):
+                return {'success': False, 'message': 'This application has been finalized by the admin and cannot be moved.'}, 403
             
             cursor.execute("UPDATE applications SET status = %s WHERE id = %s AND student_id = %s", (new_status, app_id, student['id']))
             db.commit()
@@ -447,6 +482,37 @@ def update_status_ajax():
         return {'success': False, 'message': str(e)}, 500
     finally:
         db.close()
+
+@app.route('/student/notifications')
+def student_notifications():
+    if 'user_id' not in session or session['role'] != 'student':
+        return redirect(url_for('login'))
+    
+    db = get_db_connection()
+    try:
+        with db.cursor() as cursor:
+            cursor.execute("SELECT * FROM notifications WHERE user_id = %s ORDER BY created_at DESC", (session['user_id'],))
+            notifications = cursor.fetchall()
+            
+            # Mark all as read
+            cursor.execute("UPDATE notifications SET is_read = TRUE WHERE user_id = %s AND is_read = FALSE", (session['user_id'],))
+            db.commit()
+        return render_template('notifications.html', notifications=notifications)
+    finally:
+        db.close()
+
+@app.context_processor
+def inject_notification_count():
+    if 'user_id' in session and session.get('role') == 'student':
+        db = get_db_connection()
+        try:
+            with db.cursor() as cursor:
+                cursor.execute("SELECT COUNT(*) as count FROM notifications WHERE user_id = %s AND is_read = FALSE", (session['user_id'],))
+                unread = cursor.fetchone()['count']
+            return {'unread_count': unread}
+        finally:
+            db.close()
+    return {'unread_count': 0}
 
 if __name__ == '__main__':
     app.run(debug=True)

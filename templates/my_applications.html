@@ -71,6 +71,27 @@
     
     /* Toast Notification wrapper */
     .toast-container { z-index: 1060; }
+    
+    /* Locked Cards (admin-finalized) */
+    .kanban-card.locked {
+        cursor: not-allowed !important;
+        opacity: 0.85;
+        position: relative;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+    .kanban-card.locked::after {
+        content: '\F47E';
+        font-family: 'bootstrap-icons';
+        position: absolute;
+        top: 8px;
+        right: 10px;
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    .kanban-card.locked:hover {
+        transform: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
 </style>
 {% endblock %}
 
@@ -118,14 +139,22 @@
         
         <div class="kanban-cards sortable-list" data-status="{{ status_id }}">
             {% for app in applications if app.status == status_id %}
-            <div class="kanban-card" data-id="{{ app.id }}">
+            <div class="kanban-card {{ 'locked' if app.status in ['offered', 'rejected'] else '' }}" data-id="{{ app.id }}" data-locked="{{ 'true' if app.status in ['offered', 'rejected'] else 'false' }}">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <h6 class="fw-bold mb-0 text-dark">{{ app.position }}</h6>
                 </div>
                 <p class="text-primary fw-bold small mb-2"><i class="bi bi-building"></i> {{ app.company_name }}</p>
                 <p class="text-muted small mb-2 text-truncate">{{ app.description[:60] }}...</p>
                 
-                {% if app.interview_date %}
+                {% if app.status == 'offered' %}
+                <div class="alert alert-success py-1 px-2 mb-0 small mt-2">
+                    <i class="bi bi-trophy-fill me-1"></i> Offer Received!
+                </div>
+                {% elif app.status == 'rejected' %}
+                <div class="alert alert-danger py-1 px-2 mb-0 small mt-2">
+                    <i class="bi bi-x-circle-fill me-1"></i> Application Closed
+                </div>
+                {% elif app.interview_date %}
                 <div class="alert alert-info py-1 px-2 mb-0 small mt-2">
                     <i class="bi bi-calendar-event"></i> {{ app.interview_date.strftime('%b %d, %H:%M') }}
                 </div>
@@ -151,22 +180,25 @@ document.addEventListener('DOMContentLoaded', function () {
             group: 'kanban',
             animation: 150,
             ghostClass: 'ghost-card',
+            filter: '.locked',
+            onMove: function(evt) {
+                // Prevent dropping INTO offered/rejected columns from other columns
+                // But allow dragging within the same column
+                if (evt.dragged.classList.contains('locked')) return false;
+            },
             onEnd: function (evt) {
                 const itemEl = evt.item;
                 const newCol = evt.to;
-                // If it wasn't moved to a new column, do nothing
                 if (evt.from === newCol) return;
 
                 const appId = itemEl.getAttribute('data-id');
                 const newStatus = newCol.getAttribute('data-status');
                 
-                // Update Badge Counts
                 const oldHeaderBadge = evt.from.closest('.kanban-column').querySelector('.count-badge');
                 const newHeaderBadge = evt.to.closest('.kanban-column').querySelector('.count-badge');
                 oldHeaderBadge.textContent = Math.max(0, parseInt(oldHeaderBadge.textContent) - 1);
                 newHeaderBadge.textContent = parseInt(newHeaderBadge.textContent) + 1;
 
-                // Send AJAX Request to update backend
                 $.ajax({
                     url: "{{ url_for('update_status_ajax') }}",
                     method: 'POST',
@@ -182,10 +214,19 @@ document.addEventListener('DOMContentLoaded', function () {
                             toast.show();
                         }
                     },
-                    error: function(err) {
+                    error: function(xhr) {
+                        // Revert the card back to the original column
+                        evt.from.appendChild(itemEl);
+                        oldHeaderBadge.textContent = parseInt(oldHeaderBadge.textContent) + 1;
+                        newHeaderBadge.textContent = Math.max(0, parseInt(newHeaderBadge.textContent) - 1);
+                        
                         toastEl.classList.remove('text-bg-success');
                         toastEl.classList.add('text-bg-danger');
-                        document.getElementById('toastMessage').innerHTML = `<i class="bi bi-exclamation-triangle me-2"></i> Failed to update application`;
+                        let errorMsg = 'Failed to update application';
+                        if (xhr.status === 403) {
+                            errorMsg = 'This application has been finalized by admin and cannot be moved.';
+                        }
+                        document.getElementById('toastMessage').innerHTML = `<i class="bi bi-lock-fill me-2"></i> ${errorMsg}`;
                         toast.show();
                     }
                 });

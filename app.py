@@ -1,6 +1,8 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, Response
 import pymysql
 import random
+import csv
+import io
 from datetime import datetime, timedelta
 from utils import send_otp_email
 
@@ -241,6 +243,50 @@ def schedule_interview(app_id):
     finally:
         db.close()
     return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/export_csv')
+def export_csv():
+    if 'user_id' not in session or session['role'] != 'admin':
+        return redirect(url_for('login'))
+    
+    db = get_db_connection()
+    try:
+        with db.cursor() as cursor:
+            cursor.execute("""
+                SELECT u.username, u.email, s.full_name, s.department, s.cgpa, s.skills, s.resume_url
+                FROM students s
+                JOIN users u ON s.user_id = u.id
+            """)
+            students = cursor.fetchall()
+
+            # Create CSV in memory
+            output = io.StringIO()
+            writer = csv.writer(output)
+            
+            # Header
+            writer.writerow(['Full Name', 'Username', 'Email', 'Department', 'CGPA', 'Skills', 'Resume URL'])
+            
+            # Rows
+            for student in students:
+                writer.writerow([
+                    student['full_name'], 
+                    student['username'], 
+                    student['email'], 
+                    student['department'], 
+                    student['cgpa'], 
+                    student['skills'], 
+                    student['resume_url']
+                ])
+            
+            output.seek(0)
+            
+            return Response(
+                output.getvalue(),
+                mimetype="text/csv",
+                headers={"Content-disposition": "attachment; filename=placement_report.csv"}
+            )
+    finally:
+        db.close()
 
 @app.route('/student/profile', methods=['GET', 'POST'])
 def profile():

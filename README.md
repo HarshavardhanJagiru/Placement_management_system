@@ -2,7 +2,7 @@
 
 A simple, functional full-stack application for managing student placements, job postings, and applications. Built as an individual FSD project using modern web technologies.
 
-## 🚀 Features
+##  Features
 
 - **Semantic HTML5**: Structured using header, nav, section, and footer tags.
 - **Bootstrap UI**: Professional look and feel using cards, modals, and grid system.
@@ -17,7 +17,7 @@ A simple, functional full-stack application for managing student placements, job
 - **Database**: MySQL
 - **Dependencies**: cryptography, pymysql
 
-## ⚙️ Setup Instructions
+##  Setup Instructions
 
 ### 1. Prerequisites
 - Python 3.10+
@@ -52,5 +52,5 @@ Open `http://127.0.0.1:5000` in your browser.
 3. **Apply**: Submit an application for a job.
 4. **Admin Panel**: Login as admin (`admin/admin123`) to post new jobs and view statistics.
 
-## 📜 License
+##  License
 This project is for educational purposes.

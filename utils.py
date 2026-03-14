@@ -6,8 +6,13 @@ from email.mime.multipart import MIMEMultipart
 SENDER_EMAIL = "reply.not.for.this.mail@gmail.com"
 SENDER_PASSWORD = "vmlu ctyy gajk hlar"  # User provided App Password
 
+def log_email_event(message):
+    with open("email_log.txt", "a") as f:
+        f.write(f"{datetime.now()}: {message}\n")
+
 def _send_html_email(receiver_email, subject, html_body):
     """Internal helper to send HTML emails"""
+    log_email_event(f"Attempting mail to {receiver_email} | Subject: {subject}")
     message = MIMEMultipart()
     message['From'] = f"Placement Tracker <{SENDER_EMAIL}>"
     message['To'] = receiver_email
@@ -20,9 +25,13 @@ def _send_html_email(receiver_email, subject, html_body):
         server.starttls()
         server.login(SENDER_EMAIL, SENDER_PASSWORD)
         server.send_message(message)
+        print(f"SUCCESS: Email sent to {receiver_email}")
+        log_email_event(f"SUCCESS: Mail sent to {receiver_email}")
         return True
     except Exception as e:
-        print(f"Failed to send email to {receiver_email}: {e}")
+        error_msg = f"Failed to send email to {receiver_email}: {e}"
+        print(error_msg)
+        log_email_event(f"FAIL: {error_msg}")
         return False
     finally:
         if 'server' in locals():

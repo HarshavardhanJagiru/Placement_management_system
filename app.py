@@ -90,7 +90,12 @@ def register():
                 db.commit()
                 
                 # Send the OTP via Email
-                send_otp_email(email, otp_code)
+                print(f"DEBUG: Attempting to send OTP email to {email}...")
+                success = send_otp_email(email, otp_code)
+                if success:
+                    print(f"DEBUG: OTP email sent successfully to {email}.")
+                else:
+                    print(f"ERROR: Failed to send OTP email to {email}.")
                 
                 # Setup session for verification
                 session['pending_user_id'] = user_id
@@ -278,6 +283,7 @@ def schedule_interview(app_id):
                 cursor.execute("INSERT INTO notifications (user_id, message) VALUES (%s, %s)", (app_info['user_id'], msg))
                 
                 # Send Email Alert
+                print(f"DEBUG: Triggering interview alert email to {app_info['email']}...")
                 send_interview_alert(
                     app_info['email'], 
                     app_info['full_name'], 
@@ -285,6 +291,7 @@ def schedule_interview(app_id):
                     app_info['position'], 
                     interview_date
                 )
+                print("DEBUG: Interview alert triggered.")
             
             db.commit()
             flash('Interview successfully scheduled!', 'success')

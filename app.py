@@ -293,7 +293,7 @@ def export_csv():
     try:
         with db.cursor() as cursor:
             cursor.execute("""
-                SELECT u.username, u.email, s.full_name, s.department, s.cgpa, s.skills, s.resume_url
+                SELECT u.username, u.email, s.full_name, s.department, s.cgpa, s.skills, s.resume_filename
                 FROM students s
                 JOIN users u ON s.user_id = u.id
             """)
@@ -304,7 +304,7 @@ def export_csv():
             writer = csv.writer(output)
             
             # Header
-            writer.writerow(['Full Name', 'Username', 'Email', 'Department', 'CGPA', 'Skills', 'Resume URL'])
+            writer.writerow(['Full Name', 'Username', 'Email', 'Department', 'CGPA', 'Skills', 'Resume Filename'])
             
             # Rows
             for student in students:
@@ -315,7 +315,7 @@ def export_csv():
                     student['department'], 
                     student['cgpa'], 
                     student['skills'], 
-                    student['resume_url']
+                    student['resume_filename'] if student['resume_filename'] else 'No Resume'
                 ])
             
             output.seek(0)

@@ -34,6 +34,9 @@ def get_db_connection():
     return pymysql.connect(**db_config)
 
 @app.route('/')
+def index():
+    return render_template('index.html')
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -112,7 +115,7 @@ def register():
 def logout():
     session.clear()
     flash('You have been logged out.', 'info')
-    return redirect(url_for('login'))
+    return redirect(url_for('index'))
 
 @app.route('/verify_email', methods=['GET', 'POST'])
 def verify_email():
@@ -222,8 +225,17 @@ def admin_dashboard():
 
             cursor.execute("SELECT COUNT(*) as count FROM students")
             student_count = cursor.fetchone()['count']
+
+            # Get list of all students for management
+            cursor.execute("""
+                SELECT s.full_name, u.username, s.department, s.cgpa, u.id as user_id
+                FROM students s
+                JOIN users u ON s.user_id = u.id
+                ORDER BY s.full_name ASC
+            """)
+            students_list = cursor.fetchall()
             
-        return render_template('admin_dashboard.html', jobs=jobs, applications=applications, stats_dict=stats_dict, student_count=student_count)
+        return render_template('admin_dashboard.html', jobs=jobs, applications=applications, stats_dict=stats_dict, student_count=student_count, students=students_list)
     finally:
         db.close()
 
@@ -395,6 +407,46 @@ def profile():
         return render_template('profile.html', student=student)
     finally:
         db.close()
+
+@app.route('/student/delete_account', methods=['POST'])
+def delete_account():
+    if 'user_id' not in session or session['role'] != 'student':
+        return redirect(url_for('login'))
+    
+    user_id = session['user_id']
+    db = get_db_connection()
+    try:
+        with db.cursor() as cursor:
+            # Cascading delete will handle students and applications tables
+            cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
+            db.commit()
+            session.clear()
+            flash('Your account has been permanently deleted.', 'info')
+            return redirect(url_for('index'))
+    except Exception as e:
+        db.rollback()
+        flash(f'Error deleting account: {str(e)}', 'error')
+        return redirect(url_for('profile'))
+    finally:
+        db.close()
+
+@app.route('/admin/delete_student/<int:user_id>', methods=['POST'])
+def admin_delete_student(user_id):
+    if 'user_id' not in session or session['role'] != 'admin':
+        return redirect(url_for('login'))
+    
+    db = get_db_connection()
+    try:
+        with db.cursor() as cursor:
+            cursor.execute("DELETE FROM users WHERE id = %s AND role = 'student'", (user_id,))
+            db.commit()
+            flash('Student account deleted successfully.', 'success')
+    except Exception as e:
+        db.rollback()
+        flash(f'Error deleting student: {str(e)}', 'error')
+    finally:
+        db.close()
+    return redirect(url_for('admin_dashboard'))
 
 @app.route('/view_resume/<path:filename>')
 def view_resume(filename):

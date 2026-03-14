@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Placement Management System | Future Success Starts Here</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="bg-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <nav>
+        <div class="logo">PlacementHub</div>
+        <div class="nav-links">
+            <a href="#features">Features</a>
+            <a href="{{ url_for('login') }}">Login</a>
+            <a href="{{ url_for('register') }}" class="btn-primary">Get Started</a>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <h1>Empowering Your Career Journey with AI-Powered Matching</h1>
+        <p>The next-generation placement management system designed to connect top talent with industry leaders. Streamline your applications and land your dream job.</p>
+        <div class="hero-btns">
+            <a href="{{ url_for('register') }}" class="btn-primary">Register as Student</a>
+            <a href="{{ url_for('login') }}" class="btn-outline">Recruiter Login</a>
+        </div>
+    </header>
+
+    <section id="features" class="features">
+        <div class="section-title">
+            <h2>Why Choose PlacementHub?</h2>
+            <p style="color: var(--text-muted);">Features designed for modern placement workflows</p>
+        </div>
+        <div class="grid">
+            <div class="card">
+                <i class="fas fa-bullseye"></i>
+                <h3>Smart Matching</h3>
+                <p>Our algorithm calculates match scores based on your skills and job requirements, ensuring you apply for the right roles.</p>
+            </div>
+            <div class="card">
+                <i class="fas fa-columns"></i>
+                <h3>Kanban Tracking</h3>
+                <p>Visualize your application journey with an interactive Kanban board. Drag and drop applications from saved to offered.</p>
+            </div>
+            <div class="card">
+                <i class="fas fa-bell"></i>
+                <h3>Real-time Alerts</h3>
+                <p>Never miss an interview. Get instant email notifications and reminders for scheduled sessions and status updates.</p>
+            </div>
+            <div class="card">
+                <i class="fas fa-file-invoice"></i>
+                <h3>Resume Hub</h3>
+                <p>Upload and manage your professional portfolio easily. Admins can view and export student details with a single click.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-content">
+            <div class="logo">PlacementHub</div>
+            <p>&copy; 2026 Placement Management System. Designed for Excellence.</p>
+        </div>
+    </footer>
+</body>
+</html>

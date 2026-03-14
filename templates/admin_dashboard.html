@@ -23,7 +23,10 @@
         <button class="nav-link active rounded-pill px-4 me-2" data-bs-toggle="pill" data-bs-target="#jobs-tab">Active Jobs</button>
     </li>
     <li class="nav-item">
-        <button class="nav-link rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#apps-tab">Manage Applications</button>
+        <button class="nav-link rounded-pill px-4 me-2" data-bs-toggle="pill" data-bs-target="#apps-tab">Manage Applications</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#students-tab">Student Management</button>
     </li>
 </ul>
 
@@ -138,6 +141,50 @@
                             {% endfor %}
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Students Management Tab -->
+    <div class="tab-pane fade" id="students-tab">
+        <div class="card border-0 shadow-sm glass-card">
+            <div class="card-body">
+                <h5 class="fw-bold mb-4">Manage Student Accounts</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light text-secondary small text-uppercase fw-bold">
+                            <tr>
+                                <th>Student Name</th>
+                                <th>Department</th>
+                                <th>CGPA</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in students %}
+                                <tr class="animate__animated animate__fadeIn">
+                                    <td>
+                                        <div class="fw-bold">{{ student.full_name }}</div>
+                                        <div class="small text-muted">{{ student.username }}</div>
+                                    </td>
+                                    <td>{{ student.department if student.department else 'N/A' }}</td>
+                                    <td><span class="badge bg-secondary-subtle text-secondary">{{ student.cgpa if student.cgpa else 'N/A' }}</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-danger rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#deleteStudentModal{{ student.user_id }}">
+                                            <i class="bi bi-trash me-1"></i>Delete User
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% if not students %}
+                    <div class="text-center p-5">
+                        <i class="bi bi-people fs-1 text-muted d-block mb-3"></i>
+                        <p class="text-muted">No students found in the database.</p>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -282,6 +329,27 @@
                         <button type="submit" class="btn btn-primary w-100 py-2 rounded-pill">Confirm Schedule</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+{% endfor %}
+
+{% for student in students %}
+    <!-- Delete Student Modal -->
+    <div class="modal fade" id="deleteStudentModal{{ student.user_id }}" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-body text-center p-4">
+                    <i class="bi bi-exclamation-triangle text-danger fs-1 mb-3 d-block"></i>
+                    <h5 class="fw-bold">Delete Student?</h5>
+                    <p class="small text-muted mb-4">Are you sure you want to delete <strong>{{ student.full_name }}</strong>? This will remove all their data permanently.</p>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-light flex-grow-1 rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                        <form action="{{ url_for('admin_delete_student', user_id=student.user_id) }}" method="POST" class="flex-grow-1">
+                            <button type="submit" class="btn btn-danger w-100 rounded-pill">Delete</button>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

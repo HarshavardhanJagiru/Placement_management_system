@@ -2,45 +2,98 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-def send_otp_email(receiver_email, otp_code):
-    sender_email = "reply.not.for.this.mail@gmail.com"
-    sender_password = "vmlu ctyy gajk hlar"  # User provided App Password
-    
-    # Setup the MIME
+# Common configuration
+SENDER_EMAIL = "reply.not.for.this.mail@gmail.com"
+SENDER_PASSWORD = "vmlu ctyy gajk hlar"  # User provided App Password
+
+def _send_html_email(receiver_email, subject, html_body):
+    """Internal helper to send HTML emails"""
     message = MIMEMultipart()
-    message['From'] = f"Placement Tracker <{sender_email}>"
+    message['From'] = f"Placement Tracker <{SENDER_EMAIL}>"
     message['To'] = receiver_email
-    message['Subject'] = "Your Placement Tracker Verification Code"
+    message['Subject'] = subject
     
-    # Beautiful HTML body
+    message.attach(MIMEText(html_body, 'html'))
+    
+    try:
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(SENDER_EMAIL, SENDER_PASSWORD)
+        server.send_message(message)
+        return True
+    except Exception as e:
+        print(f"Failed to send email to {receiver_email}: {e}")
+        return False
+    finally:
+        if 'server' in locals():
+            server.quit()
+
+def send_otp_email(receiver_email, otp_code):
+    subject = "Your Placement Tracker Verification Code"
     html_body = f"""
     <html>
-      <body style="font-family: Arial, sans-serif; background-color: #f4f7f6; padding: 20px;">
-        <div style="max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-          <h2 style="color: #4f46e5; text-align: center; margin-bottom: 20px;">Welcome to Placement Tracker!</h2>
-          <p style="color: #4a5568; font-size: 16px; line-height: 1.6;">Thank you for registering. Please use the following One-Time Password (OTP) to verify your stunning new dashboard account.</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #1e293b; background: #e2e8f0; padding: 10px 20px; border-radius: 8px;">{otp_code}</span>
+      <body style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f8fafc; padding: 40px 20px;">
+        <div style="max-width: 600px; margin: 0 auto; background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h2 style="color: #4f46e5; margin: 0; font-size: 24px;">Welcome to Placement Tracker!</h2>
           </div>
-          <p style="color: #718096; font-size: 14px; text-align: center;">This code will expire in exactly 15 minutes.</p>
-          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
-          <p style="color: #a0aec0; font-size: 12px; text-align: center;">If you didn't request this email, please ignore it.</p>
+          <p style="color: #475569; font-size: 16px; line-height: 1.6;">Thank you for registering. Please use the following One-Time Password (OTP) to verify your stunning new dashboard account.</p>
+          <div style="text-align: center; margin: 35px 0;">
+            <span style="font-size: 36px; font-weight: bold; letter-spacing: 6px; color: #1e293b; background: #f1f5f9; padding: 15px 30px; border-radius: 12px; border: 1px solid #e2e8f0;">{otp_code}</span>
+          </div>
+          <p style="color: #64748b; font-size: 14px; text-align: center;">This code will expire in exactly 15 minutes.</p>
+          <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 30px 0;">
+          <p style="color: #94a3b8; font-size: 12px; text-align: center;">If you didn't request this email, please ignore it.</p>
         </div>
       </body>
     </html>
     """
-    message.attach(MIMEText(html_body, 'html'))
-    
-    # Create SMTP session
-    try:
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls() # Enable security
-        server.login(sender_email, sender_password) # Login
-        server.send_message(message)
-        print(f"OTP email sent successfully to {receiver_email}")
-        return True
-    except Exception as e:
-        print(f"Failed to send email: {e}")
-        return False
-    finally:
-        server.quit()
+    return _send_html_email(receiver_email, subject, html_body)
+
+def send_interview_alert(receiver_email, student_name, company, position, date_time):
+    subject = f"Interview Scheduled: {position} at {company}"
+    html_body = f"""
+    <html>
+      <body style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f8fafc; padding: 40px 20px;">
+        <div style="max-width: 600px; margin: 0 auto; background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-top: 4px solid #4f46e5;">
+          <h2 style="color: #1e293b; margin-top: 0;">Hi {student_name}, 🎉</h2>
+          <p style="color: #475569; font-size: 16px; line-height: 1.6;">Great news! An interview has been scheduled for your application.</p>
+          <div style="background: #f8fafc; padding: 25px; border-radius: 12px; margin: 30px 0; border: 1px solid #e2e8f0;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr><td style="color: #64748b; padding-bottom: 10px;">Company:</td><td style="color: #1e293b; font-weight: bold; padding-bottom: 10px;">{company}</td></tr>
+              <tr><td style="color: #64748b; padding-bottom: 10px;">Position:</td><td style="color: #1e293b; font-weight: bold; padding-bottom: 10px;">{position}</td></tr>
+              <tr><td style="color: #64748b;">Schedule:</td><td style="color: #4f46e5; font-weight: bold;">{date_time}</td></tr>
+            </table>
+          </div>
+          <p style="color: #475569; font-size: 16px;">Please be prepared and log in to your dashboard for more details.</p>
+          <div style="text-align: center; margin-top: 30px;">
+            <a href="#" style="background: #4f46e5; color: white; padding: 12px 30px; border-radius: 30px; text-decoration: none; font-weight: bold; display: inline-block;">Go to Dashboard</a>
+          </div>
+        </div>
+      </body>
+    </html>
+    """
+    return _send_html_email(receiver_email, subject, html_body)
+
+def send_interview_reminder(receiver_email, student_name, company, position, date_time):
+    subject = f"Friendly Reminder: Interview at {company} tomorrow"
+    html_body = f"""
+    <html>
+      <body style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #fffbeb; padding: 40px 20px;">
+        <div style="max-width: 600px; margin: 0 auto; background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-top: 4px solid #f59e0b;">
+          <h2 style="color: #1e293b; margin-top: 0;">Hi {student_name}, 👋</h2>
+          <p style="color: #475569; font-size: 16px; line-height: 1.6;">This is a friendly reminder for your upcoming interview tomorrow.</p>
+          <div style="background: #fffbeb; padding: 25px; border-radius: 12px; margin: 30px 0; border: 1px solid #fef3c7;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr><td style="color: #92400e; padding-bottom: 10px;">Company:</td><td style="color: #1e293b; font-weight: bold; padding-bottom: 10px;">{company}</td></tr>
+              <tr><td style="color: #92400e; padding-bottom: 10px;">Position:</td><td style="color: #1e293b; font-weight: bold; padding-bottom: 10px;">{position}</td></tr>
+              <tr><td style="color: #92400e;">When:</td><td style="color: #b45309; font-weight: bold;">{date_time}</td></tr>
+            </table>
+          </div>
+          <p style="color: #475569; font-size: 16px;">Good luck! We believe in you.</p>
+        </div>
+      </body>
+    </html>
+    """
+    return _send_html_email(receiver_email, subject, html_body)
+

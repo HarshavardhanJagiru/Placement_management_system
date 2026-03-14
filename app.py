@@ -2,11 +2,12 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 import pymysql
 import random
 import csv
-import io
 import os
+import threading
+import time
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
-from utils import send_otp_email
+from utils import send_otp_email, send_interview_alert, send_interview_reminder
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Change this for production
@@ -264,9 +265,10 @@ def schedule_interview(app_id):
             
             # Auto-create notification
             cursor.execute("""
-                SELECT s.user_id, j.company_name, j.position 
+                SELECT s.user_id, j.company_name, j.position, s.full_name, u.email
                 FROM applications a 
                 JOIN students s ON a.student_id = s.id 
+                JOIN users u ON s.user_id = u.id
                 JOIN jobs j ON a.job_id = j.id 
                 WHERE a.id = %s
             """, (app_id,))
@@ -274,6 +276,15 @@ def schedule_interview(app_id):
             if app_info:
                 msg = f"📅 Interview Scheduled for {app_info['position']} at {app_info['company_name']} on {interview_date}."
                 cursor.execute("INSERT INTO notifications (user_id, message) VALUES (%s, %s)", (app_info['user_id'], msg))
+                
+                # Send Email Alert
+                send_interview_alert(
+                    app_info['email'], 
+                    app_info['full_name'], 
+                    app_info['company_name'], 
+                    app_info['position'], 
+                    interview_date
+                )
             
             db.commit()
             flash('Interview successfully scheduled!', 'success')
@@ -607,5 +618,55 @@ def inject_notification_count():
             db.close()
     return {'unread_count': 0}
 
+def background_reminder_task():
+    """Background task to send interview reminders 24h before"""
+    while True:
+        try:
+            db = get_db_connection()
+            with db.cursor() as cursor:
+                # Find interviews in next 24 hours that haven't had a reminder sent
+                # and where status is 'interview'
+                now = datetime.now()
+                tomorrow = now + timedelta(hours=24)
+                
+                cursor.execute("""
+                    SELECT a.id, a.interview_date, j.company_name, j.position, s.full_name, u.email
+                    FROM applications a
+                    JOIN jobs j ON a.job_id = j.id
+                    JOIN students s ON a.student_id = s.id
+                    JOIN users u ON s.user_id = u.id
+                    WHERE a.status = 'interview' 
+                    AND a.reminder_sent = FALSE
+                    AND a.interview_date <= %s
+                    AND a.interview_date > %s
+                """, (tomorrow, now))
+                
+                upcoming = cursor.fetchall()
+                for app_data in upcoming:
+                    print(f"Sending reminder to {app_data['email']} for interview at {app_data['company_name']}")
+                    success = send_interview_reminder(
+                        app_data['email'],
+                        app_data['full_name'],
+                        app_data['company_name'],
+                        app_data['position'],
+                        app_data['interview_date'].strftime('%Y-%m-%d %H:%M') if isinstance(app_data['interview_date'], datetime) else str(app_data['interview_date'])
+                    )
+                    if success:
+                        cursor.execute("UPDATE applications SET reminder_sent = TRUE WHERE id = %s", (app_data['id'],))
+                        db.commit()
+                        
+            db.close()
+        except Exception as e:
+            print(f"Error in background reminder task: {e}")
+            if 'db' in locals():
+                db.close()
+        
+        # Check every hour
+        time.sleep(3600)
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Start reminder thread
+    reminder_thread = threading.Thread(target=background_reminder_task, daemon=True)
+    reminder_thread.start()
+    
+    app.run(debug=True, use_reloader=False) # Reloader can start thread twice

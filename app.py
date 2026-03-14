@@ -448,6 +448,40 @@ def admin_delete_student(user_id):
         db.close()
     return redirect(url_for('admin_dashboard'))
 
+@app.route('/change_password', methods=['POST'])
+def change_password():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    current_password = request.form['current_password']
+    new_password = request.form['new_password']
+    confirm_password = request.form['confirm_password']
+    
+    if new_password != confirm_password:
+        flash('New passwords do not match.', 'error')
+        return redirect(request.referrer or url_for('index'))
+    
+    user_id = session['user_id']
+    db = get_db_connection()
+    try:
+        with db.cursor() as cursor:
+            cursor.execute("SELECT password FROM users WHERE id = %s", (user_id,))
+            user = cursor.fetchone()
+            
+            if user and user['password'] == current_password:
+                cursor.execute("UPDATE users SET password = %s WHERE id = %s", (new_password, user_id))
+                db.commit()
+                flash('Password updated successfully!', 'success')
+            else:
+                flash('Incorrect current password.', 'error')
+    except Exception as e:
+        db.rollback()
+        flash(f'Error updating password: {str(e)}', 'error')
+    finally:
+        db.close()
+    
+    return redirect(request.referrer or url_for('index'))
+
 @app.route('/view_resume/<path:filename>')
 def view_resume(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)

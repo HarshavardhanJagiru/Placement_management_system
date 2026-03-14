@@ -1,13 +1,24 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, Response
+from flask import Flask, render_template, request, redirect, url_for, session, flash, Response, send_from_directory
 import pymysql
 import random
 import csv
 import io
+import os
 from datetime import datetime, timedelta
+from werkzeug.utils import secure_filename
 from utils import send_otp_email
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Change this for production
+
+# Upload configuration
+UPLOAD_FOLDER = 'static/uploads/resumes'
+ALLOWED_EXTENSIONS = {'pdf', 'docx'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # Database configuration
 db_config = {
@@ -176,7 +187,7 @@ def admin_dashboard():
             cursor.execute("""
                 SELECT a.id, a.status, a.interview_date, j.position, j.company_name, 
                        s.full_name, s.skills as student_skills, j.required_skills as job_skills,
-                       a.date_applied AS applied_at
+                       s.resume_filename, a.date_applied AS applied_at
                 FROM applications a
                 JOIN jobs j ON a.job_id = j.id
                 JOIN students s ON a.student_id = s.id
@@ -329,20 +340,47 @@ def profile():
                 full_name = request.form['full_name']
                 department = request.form['department']
                 cgpa = request.form['cgpa']
-                resume_url = request.form['resume_url']
                 skills = request.form['skills']
-                cursor.execute("""
-                    UPDATE students SET full_name=%s, department=%s, cgpa=%s, resume_url=%s, skills=%s
-                    WHERE user_id=%s
-                """, (full_name, department, cgpa, resume_url, skills, session['user_id']))
+                
+                # Handle resume upload
+                resume_filename = None
+                if 'resume_file' in request.files:
+                    file = request.files['resume_file']
+                    if file and file.filename != '':
+                        if allowed_file(file.filename):
+                            filename = secure_filename(f"resume_{session['user_id']}_{file.filename}")
+                            if not os.path.exists(app.config['UPLOAD_FOLDER']):
+                                os.makedirs(app.config['UPLOAD_FOLDER'])
+                            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                            resume_filename = filename
+                        else:
+                            flash('Invalid file type. Only PDF and DOCX are allowed.', 'error')
+
+                if resume_filename:
+                    cursor.execute("""
+                        UPDATE students 
+                        SET full_name=%s, department=%s, cgpa=%s, skills=%s, resume_filename=%s 
+                        WHERE user_id=%s
+                    """, (full_name, department, cgpa, skills, resume_filename, session['user_id']))
+                else:
+                    cursor.execute("""
+                        UPDATE students 
+                        SET full_name=%s, department=%s, cgpa=%s, skills=%s 
+                        WHERE user_id=%s
+                    """, (full_name, department, cgpa, skills, session['user_id']))
+                
                 db.commit()
-                flash('Profile updated!', 'success')
+                flash('Profile updated successfully!', 'success')
             
             cursor.execute("SELECT * FROM students WHERE user_id = %s", (session['user_id'],))
             student = cursor.fetchone()
         return render_template('profile.html', student=student)
     finally:
         db.close()
+
+@app.route('/view_resume/<path:filename>')
+def view_resume(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 @app.route('/student/my_applications')
 def my_applications():

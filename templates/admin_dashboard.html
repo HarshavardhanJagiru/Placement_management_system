@@ -91,7 +91,14 @@
                             <tr class="animate__animated animate__fadeIn">
                                 <td>
                                     <div class="fw-bold">{{ app.full_name }}</div>
-                                    <div class="small text-muted">{{ app.applied_at }}</div>
+                                    <div class="small text-muted mb-1">{{ app.applied_at }}</div>
+                                    {% if app.resume_filename %}
+                                    <a href="{{ url_for('view_resume', filename=app.resume_filename) }}" target="_blank" class="btn btn-sm btn-outline-secondary py-0 small" style="font-size: 0.75rem;">
+                                        <i class="bi bi-file-earmark-pdf"></i> View Resume
+                                    </a>
+                                    {% else %}
+                                    <span class="small text-muted"><i class="bi bi-x-circle"></i> No Resume</span>
+                                    {% endif %}
                                 </td>
                                 <td>
                                     <div class="d-flex align-items-center">

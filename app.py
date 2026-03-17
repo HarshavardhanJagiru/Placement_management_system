@@ -3,11 +3,12 @@ import pymysql
 import random
 import csv
 import os
+import io
 import threading
 import time
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
-from utils import send_otp_email, send_interview_alert, send_interview_reminder
+from utils import send_otp_email, send_interview_alert, send_interview_reminder, send_reset_otp_email
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Change this for production
@@ -116,6 +117,78 @@ def logout():
     session.clear()
     flash('You have been logged out.', 'info')
     return redirect(url_for('index'))
+
+@app.route('/forgot_password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form['email']
+        db = get_db_connection()
+        try:
+            with db.cursor() as cursor:
+                cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
+                user = cursor.fetchone()
+                if user:
+                    otp_code = f"{random.randint(100000, 999999)}"
+                    otp_expiry = datetime.now() + timedelta(minutes=15)
+                    cursor.execute("UPDATE users SET otp_code = %s, otp_expiry = %s WHERE id = %s", 
+                                 (otp_code, otp_expiry, user['id']))
+                    db.commit()
+                    
+                    if send_reset_otp_email(email, otp_code):
+                        session['reset_email'] = email
+                        flash('Password reset code sent to your email.', 'info')
+                        return redirect(url_for('reset_password'))
+                    else:
+                        flash('Failed to send reset email. Please try again.', 'error')
+                else:
+                    flash('No account found with that email address.', 'error')
+        except Exception as e:
+            db.rollback()
+            flash(f'Error: {str(e)}', 'error')
+        finally:
+            db.close()
+    return render_template('forgot_password.html')
+
+@app.route('/reset_password', methods=['GET', 'POST'])
+def reset_password():
+    if 'reset_email' not in session:
+        return redirect(url_for('forgot_password'))
+        
+    if request.method == 'POST':
+        submitted_otp = request.form['otp_code']
+        new_password = request.form['new_password']
+        confirm_password = request.form['confirm_password']
+        email = session['reset_email']
+        
+        if new_password != confirm_password:
+            flash('Passwords do not match.', 'error')
+            return redirect(url_for('reset_password'))
+            
+        db = get_db_connection()
+        try:
+            with db.cursor() as cursor:
+                cursor.execute("SELECT otp_code, otp_expiry FROM users WHERE email = %s", (email,))
+                user = cursor.fetchone()
+                
+                if user and user['otp_code'] == submitted_otp:
+                    if datetime.now() <= user['otp_expiry']:
+                        cursor.execute("UPDATE users SET password = %s, otp_code = NULL, otp_expiry = NULL WHERE email = %s", 
+                                     (new_password, email))
+                        db.commit()
+                        session.pop('reset_email', None)
+                        flash('Password reset successful! You can now login.', 'success')
+                        return redirect(url_for('login'))
+                    else:
+                        flash('Reset code has expired.', 'error')
+                else:
+                    flash('Invalid reset code.', 'error')
+        except Exception as e:
+            db.rollback()
+            flash(f'Error: {str(e)}', 'error')
+        finally:
+            db.close()
+            
+    return render_template('reset_password.html')
 
 @app.route('/verify_email', methods=['GET', 'POST'])
 def verify_email():

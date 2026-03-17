@@ -106,3 +106,24 @@ def send_interview_reminder(receiver_email, student_name, company, position, dat
     """
     return _send_html_email(receiver_email, subject, html_body)
 
+def send_reset_otp_email(receiver_email, otp_code):
+    subject = "Password Reset Verification Code"
+    html_body = f"""
+    <html>
+      <body style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f8fafc; padding: 40px 20px;">
+        <div style="max-width: 600px; margin: 0 auto; background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-top: 4px solid #ef4444;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h2 style="color: #ef4444; margin: 0; font-size: 24px;">Password Reset Request</h2>
+          </div>
+          <p style="color: #475569; font-size: 16px; line-height: 1.6;">We received a request to reset your password. Please use the following One-Time Password (OTP) to proceed with the reset.</p>
+          <div style="text-align: center; margin: 35px 0;">
+            <span style="font-size: 36px; font-weight: bold; letter-spacing: 6px; color: #1e293b; background: #f1f5f9; padding: 15px 30px; border-radius: 12px; border: 1px solid #e2e8f0;">{otp_code}</span>
+          </div>
+          <p style="color: #64748b; font-size: 14px; text-align: center;">This code will expire in exactly 15 minutes.</p>
+          <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 30px 0;">
+          <p style="color: #94a3b8; font-size: 12px; text-align: center;">If you didn't request a password reset, please ignore this email or contact support if you have concerns.</p>
+        </div>
+      </body>
+    </html>
+    """
+    return _send_html_email(receiver_email, subject, html_body)

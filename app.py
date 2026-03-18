@@ -301,10 +301,11 @@ def admin_dashboard():
 
             # Get list of all students for management
             cursor.execute("""
-                SELECT s.full_name, u.username, s.department, s.cgpa, u.id as user_id
-                FROM students s
-                JOIN users u ON s.user_id = u.id
-                ORDER BY s.full_name ASC
+                SELECT s.full_name, u.username, u.email, s.department, s.cgpa, u.id as user_id
+                FROM users u
+                LEFT JOIN students s ON u.id = s.user_id
+                WHERE u.role = 'student'
+                ORDER BY u.username ASC
             """)
             students_list = cursor.fetchall()
             
@@ -514,6 +515,7 @@ def delete_account():
             return redirect(url_for('index'))
     except Exception as e:
         db.rollback()
+        print(f"DEBUG: Deletion error: {str(e)}")
         flash(f'Error deleting account: {str(e)}', 'error')
         return redirect(url_for('profile'))
     finally:
@@ -549,6 +551,7 @@ def admin_delete_student(user_id):
             flash('Student account deleted successfully.', 'success')
     except Exception as e:
         db.rollback()
+        print(f"DEBUG: Admin deletion error: {str(e)}")
         flash(f'Error deleting student: {str(e)}', 'error')
     finally:
         db.close()

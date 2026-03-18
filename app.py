@@ -490,8 +490,24 @@ def delete_account():
     db = get_db_connection()
     try:
         with db.cursor() as cursor:
-            # Cascading delete will handle students and applications tables
+            # First, find the student_id if it exists
+            cursor.execute("SELECT id FROM students WHERE user_id = %s", (user_id,))
+            student = cursor.fetchone()
+            
+            if student:
+                student_id = student['id']
+                # 1. Delete applications
+                cursor.execute("DELETE FROM applications WHERE student_id = %s", (student_id,))
+                
+            # 2. Delete notifications
+            cursor.execute("DELETE FROM notifications WHERE user_id = %s", (user_id,))
+            
+            # 3. Delete student profile
+            cursor.execute("DELETE FROM students WHERE user_id = %s", (user_id,))
+            
+            # 4. Finally delete user
             cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
+            
             db.commit()
             session.clear()
             flash('Your account has been permanently deleted.', 'info')
@@ -511,7 +527,24 @@ def admin_delete_student(user_id):
     db = get_db_connection()
     try:
         with db.cursor() as cursor:
+            # First, find the student_id if it exists
+            cursor.execute("SELECT id FROM students WHERE user_id = %s", (user_id,))
+            student = cursor.fetchone()
+            
+            if student:
+                student_id = student['id']
+                # 1. Delete applications
+                cursor.execute("DELETE FROM applications WHERE student_id = %s", (student_id,))
+                
+            # 2. Delete notifications
+            cursor.execute("DELETE FROM notifications WHERE user_id = %s", (user_id,))
+            
+            # 3. Delete student profile
+            cursor.execute("DELETE FROM students WHERE user_id = %s", (user_id,))
+            
+            # 4. Finally delete user
             cursor.execute("DELETE FROM users WHERE id = %s AND role = 'student'", (user_id,))
+            
             db.commit()
             flash('Student account deleted successfully.', 'success')
     except Exception as e:

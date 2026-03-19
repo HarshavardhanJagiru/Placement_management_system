@@ -37,6 +37,9 @@
             data-bs-target="#changePasswordModal">
             <i class="bi bi-shield-lock me-2"></i>Password
         </button>
+        <a href="{{ url_for('admin_bulk_actions') }}" class="btn btn-outline-info shadow-sm rounded-pill px-4 me-2">
+            <i class="bi bi-envelope-paper me-2"></i>Bulk Actions
+        </a>
         <button class="btn btn-primary shadow-sm rounded-pill px-4" data-bs-toggle="modal"
             data-bs-target="#addJobModal">
             <i class="bi bi-plus-circle me-2"></i>Post New Job
@@ -500,31 +503,32 @@
     // 1. Application Status Chart
     const statusCtx = document.getElementById('statusChart');
     if (statusCtx) {
-        const statusData = {{ stats_dict | tojson }};
-            const labels = Object.keys(statusData);
-            
-            // Fixed color mapping for consistency
-            const colorMap = {
-                'applied': '#4e73df',   // Blue
-                'interview': '#36b9cc', // Cyan
-                'offered': '#1cc88a',   // Green
-                'rejected': '#e74a3b'   // Red
-            };
-            const defaultColor = '#f6c23e'; // Yellow/Warning for others
+        const statusData = {{ stats_dict | tojson
+    }};
+    const labels = Object.keys(statusData);
 
-            const backgroundColors = labels.map(label => colorMap[label.toLowerCase()] || defaultColor);
+    // Fixed color mapping for consistency
+    const colorMap = {
+        'applied': '#4e73df',   // Blue
+        'interview': '#36b9cc', // Cyan
+        'offered': '#1cc88a',   // Green
+        'rejected': '#e74a3b'   // Red
+    };
+    const defaultColor = '#f6c23e'; // Yellow/Warning for others
 
-            new Chart(statusCtx.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: labels.map(s => s.charAt(0).toUpperCase() + s.slice(1)),
-                    datasets: [{
-                        data: Object.values(statusData),
-                        backgroundColor: backgroundColors,
-                        hoverOffset: 4
-                    }]
-                },
-   options: {
+    const backgroundColors = labels.map(label => colorMap[label.toLowerCase()] || defaultColor);
+
+    new Chart(statusCtx.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels: labels.map(s => s.charAt(0).toUpperCase() + s.slice(1)),
+            datasets: [{
+                data: Object.values(statusData),
+                backgroundColor: backgroundColors,
+                hoverOffset: 4
+            }]
+        },
+        options: {
             maintainAspectRatio: false,
             plugins: {
                 legend: { position: 'bottom' }

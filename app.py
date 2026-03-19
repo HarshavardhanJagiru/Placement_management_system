@@ -327,6 +327,108 @@ def admin_dashboard():
     finally:
         db.close()
 
+@app.route('/admin/bulk-actions')
+def admin_bulk_actions():
+    if 'user_id' not in session or session.get('role') != 'admin':
+        flash('Unauthorized access.', 'danger')
+        return redirect(url_for('login'))
+    
+    db = get_db_connection()
+    try:
+        with db.cursor() as cursor:
+            # Get departments for filter (from students table)
+            cursor.execute("SELECT DISTINCT department FROM students WHERE department IS NOT NULL")
+            departments = [row['department'] for row in cursor.fetchall()]
+            
+            # Get all students initially
+            cursor.execute("""
+                SELECT u.id, u.username, u.email, s.full_name, s.department, s.cgpa 
+                FROM users u
+                LEFT JOIN students s ON u.id = s.user_id
+                WHERE u.role = 'student'
+            """)
+            students = cursor.fetchall()
+            
+    finally:
+        db.close()
+        
+    return render_template('admin_bulk_actions.html', 
+                           departments=departments, 
+                           students=students)
+
+@app.route('/admin/filter-students', methods=['POST'])
+def filter_students():
+    if 'user_id' not in session or session.get('role') != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 401
+        
+    data = request.json
+    dept = data.get('department')
+    min_cgpa = data.get('min_cgpa')
+    
+    query = """
+        SELECT u.id, s.full_name, u.username, u.email, s.department, s.cgpa 
+        FROM users u
+        LEFT JOIN students s ON u.id = s.user_id
+        WHERE u.role = 'student'
+    """
+    params = []
+    
+    if dept and dept != 'all':
+        query += " AND s.department = %s"
+        params.append(dept)
+    
+    if min_cgpa:
+        query += " AND s.cgpa >= %s"
+        params.append(float(min_cgpa))
+        
+    db = get_db_connection()
+    try:
+        with db.cursor() as cursor:
+            cursor.execute(query, tuple(params))
+            students = cursor.fetchall()
+            # Convert values for JSON safety (especially Decimal/None)
+            for s in students:
+                if s['cgpa']: s['cgpa'] = float(s['cgpa'])
+                if not s['full_name']: s['full_name'] = s['username']
+    finally:
+        db.close()
+        
+    return jsonify(students)
+
+@app.route('/admin/send-bulk-message', methods=['POST'])
+def send_bulk_message():
+    if 'user_id' not in session or session.get('role') != 'admin':
+        flash('Unauthorized', 'danger')
+        return redirect(url_for('login'))
+        
+    student_ids = request.form.getlist('student_ids')
+    subject = request.form.get('subject')
+    body = request.form.get('body')
+    
+    if not student_ids:
+        flash('No students selected.', 'warning')
+        return redirect(url_for('admin_bulk_actions'))
+        
+    db = get_db_connection()
+    success_count = 0
+    try:
+        from utils import send_email
+        with db.cursor() as cursor:
+            # Get emails for selected IDs
+            format_strings = ','.join(['%s'] * len(student_ids))
+            cursor.execute(f"SELECT email, username FROM users WHERE id IN ({format_strings})", tuple(student_ids))
+            recipients = cursor.fetchall()
+            
+            for recipient in recipients:
+                if send_email(recipient['email'], subject, body):
+                    success_count += 1
+                    
+    finally:
+        db.close()
+        
+    flash(f'Successfully sent messages to {success_count} students.', 'success')
+    return redirect(url_for('admin_bulk_actions'))
+
 @app.route('/admin/application/<int:app_id>/<string:status>')
 def update_status(app_id, status):
     if 'user_id' not in session or session['role'] != 'admin':

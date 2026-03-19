@@ -4,6 +4,7 @@ import random
 import csv
 import os
 import io
+import re
 import threading
 import time
 from datetime import datetime, timedelta
@@ -21,6 +22,24 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def is_strong_password(password):
+    """Checks if a password meets strength requirements:
+       - Minimum 8 characters
+       - At least one uppercase letter
+       - At least one number
+       - At least one special character
+    """
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters long."
+    if not re.search(r'[A-Z]', password):
+        return False, "Password must contain at least one uppercase letter."
+    if not re.search(r'\d', password):
+        return False, "Password must contain at least one number."
+    if not re.search(r'[^A-Za-z0-9]', password):
+        return False, "Password must contain at least one special character."
+    
+    return True, ""
 
 # Database configuration
 db_config = {
@@ -77,6 +96,11 @@ def register():
         full_name = request.form['full_name']
         department = request.form['department']
         cgpa = request.form['cgpa']
+        
+        is_valid, msg = is_strong_password(password)
+        if not is_valid:
+            flash(msg, 'error')
+            return render_template('register.html')
         
         db = get_db_connection()
         try:
@@ -164,6 +188,11 @@ def reset_password():
             flash('Passwords do not match.', 'error')
             return redirect(url_for('reset_password'))
             
+        is_valid, msg = is_strong_password(new_password)
+        if not is_valid:
+            flash(msg, 'error')
+            return redirect(url_for('reset_password'))
+
         db = get_db_connection()
         try:
             with db.cursor() as cursor:

@@ -2,9 +2,7 @@
 
 {% block title %}Admin Dashboard - Placement Management System{% endblock %}
 
-{% block extra_head %}
-<!-- Chart.js CDN -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% block head %}
 <style>
     .chart-container {
         position: relative;
@@ -12,89 +10,7 @@
         width: 100%;
         margin-bottom: 2rem;
     }
-</style>{% block scripts %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // 1. Application Status Chart
-        const statusCtx = document.getElementById('statusChart').getContext('2d');
-        const statusData = {{ stats_dict | tojson }};
-        
-        new Chart(statusCtx, {
-            type: 'doughnut',
-            data: {
-                labels: Object.keys(statusData).map(s => s.charAt(0).toUpperCase() + s.slice(1)),
-                datasets: [{
-                    data: Object.values(statusData),
-                    backgroundColor: [
-                        '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'
-                    ],
-                    hoverOffset: 4
-                }]
-            },
-            options: {
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'bottom' }
-                }
-            }
-        });
-
-        // 2. Department Distribution Chart
-        const deptCtx = document.getElementById('deptChart').getContext('2d');
-        const deptStats = {{ dept_stats | tojson }};
-        
-        new Chart(deptCtx, {
-            type: 'bar',
-            data: {
-                labels: deptStats.map(d => d.department),
-                datasets: [{
-                    label: 'Number of Students',
-                    data: deptStats.map(d => d.count),
-                    backgroundColor: '#4e73df',
-                    borderRadius: 5
-                }]
-            },
-            options: {
-                maintainAspectRatio: false,
-                scales: {
-                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
-                },
-                plugins: {
-                    legend: { display: false }
-                }
-            }
-        });
-
-        // 3. Top Companies Chart
-        const companyCtx = document.getElementById('companyChart').getContext('2d');
-        const companyStats = {{ company_stats | tojson }};
-        
-        new Chart(companyCtx, {
-            type: 'bar',
-            data: {
-                labels: companyStats.map(c => c.company_name),
-                datasets: [{
-                    label: 'Job Postings',
-                    data: companyStats.map(c => c.count),
-                    backgroundColor: '#1cc88a',
-                    borderRadius: 5
-                }]
-            },
-            options: {
-                indexAxis: 'y',
-                maintainAspectRatio: false,
-                scales: {
-                    x: { beginAtZero: true, ticks: { stepSize: 1 } }
-                },
-                plugins: {
-                    legend: { display: false }
-                }
-            }
-        });
-    });
-</script>
-{% endblock %}
-
+</style>
 {% endblock %}
 
 {% block content %}

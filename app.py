@@ -299,6 +299,13 @@ def admin_dashboard():
             cursor.execute("SELECT COUNT(*) as count FROM students")
             student_count = cursor.fetchone()['count']
 
+            # Stats for charts
+            cursor.execute("SELECT department, COUNT(*) as count FROM students WHERE department IS NOT NULL GROUP BY department")
+            dept_stats = cursor.fetchall()
+            
+            cursor.execute("SELECT company_name, COUNT(*) as count FROM jobs GROUP BY company_name ORDER BY count DESC LIMIT 5")
+            company_stats = cursor.fetchall()
+
             # Get list of all students for management
             cursor.execute("""
                 SELECT s.full_name, u.username, u.email, s.department, s.cgpa, u.id as user_id
@@ -309,7 +316,14 @@ def admin_dashboard():
             """)
             students_list = cursor.fetchall()
             
-        return render_template('admin_dashboard.html', jobs=jobs, applications=applications, stats_dict=stats_dict, student_count=student_count, students=students_list)
+        return render_template('admin_dashboard.html', 
+                               jobs=jobs, 
+                               applications=applications, 
+                               stats_dict=stats_dict, 
+                               student_count=student_count, 
+                               students=students_list,
+                               dept_stats=dept_stats,
+                               company_stats=company_stats)
     finally:
         db.close()
 

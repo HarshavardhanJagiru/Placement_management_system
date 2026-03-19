@@ -2,6 +2,101 @@
 
 {% block title %}Admin Dashboard - Placement Management System{% endblock %}
 
+{% block extra_head %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+        margin-bottom: 2rem;
+    }
+</style>{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 1. Application Status Chart
+        const statusCtx = document.getElementById('statusChart').getContext('2d');
+        const statusData = {{ stats_dict | tojson }};
+        
+        new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(statusData).map(s => s.charAt(0).toUpperCase() + s.slice(1)),
+                datasets: [{
+                    data: Object.values(statusData),
+                    backgroundColor: [
+                        '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'
+                    ],
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+
+        // 2. Department Distribution Chart
+        const deptCtx = document.getElementById('deptChart').getContext('2d');
+        const deptStats = {{ dept_stats | tojson }};
+        
+        new Chart(deptCtx, {
+            type: 'bar',
+            data: {
+                labels: deptStats.map(d => d.department),
+                datasets: [{
+                    label: 'Number of Students',
+                    data: deptStats.map(d => d.count),
+                    backgroundColor: '#4e73df',
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+
+        // 3. Top Companies Chart
+        const companyCtx = document.getElementById('companyChart').getContext('2d');
+        const companyStats = {{ company_stats | tojson }};
+        
+        new Chart(companyCtx, {
+            type: 'bar',
+            data: {
+                labels: companyStats.map(c => c.company_name),
+                datasets: [{
+                    label: 'Job Postings',
+                    data: companyStats.map(c => c.count),
+                    backgroundColor: '#1cc88a',
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                maintainAspectRatio: false,
+                scales: {
+                    x: { beginAtZero: true, ticks: { stepSize: 1 } }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
+
+{% endblock %}
+
 {% block content %}
 <section class="row mb-4">
     <div class="col-md-8">
@@ -35,6 +130,11 @@
     <li class="nav-item">
         <button class="nav-link rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#students-tab">Student
             Management</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link rounded-pill px-4 ms-2" data-bs-toggle="pill" data-bs-target="#stats-tab">
+            <i class="bi bi-graph-up me-2"></i>Statistics
+        </button>
     </li>
 </ul>
 
@@ -209,6 +309,47 @@
                         <p class="text-muted">No students found in the database.</p>
                     </div>
                     {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Tab -->
+    <div class="tab-pane fade" id="stats-tab">
+        <div class="row">
+            <!-- Placement Status Chart -->
+            <div class="col-md-6 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <h5 class="fw-bold mb-4">Application Status Overview</h5>
+                        <div class="chart-container">
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Department Distribution Chart -->
+            <div class="col-md-6 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <h5 class="fw-bold mb-4">Department-wise Students</h5>
+                        <div class="chart-container">
+                            <canvas id="deptChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Companies Chart -->
+            <div class="col-12 mb-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="fw-bold mb-4">Top Recruiting Companies (by Job Postings)</h5>
+                        <div class="chart-container" style="height: 400px;">
+                            <canvas id="companyChart"></canvas>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

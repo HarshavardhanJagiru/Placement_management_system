@@ -10,6 +10,16 @@
         width: 100%;
         margin-bottom: 2rem;
     }
+
+    /* Fix for dropdown clipping: ensure active rows stay on top */
+    tr:has(.show) {
+        position: relative;
+        z-index: 1050 !important;
+    }
+
+    .dropdown-menu {
+        z-index: 1060 !important;
+    }
 </style>
 {% endblock %}
 
@@ -159,7 +169,7 @@
                                 <td>
                                     <div class="dropdown">
                                         <button class="btn btn-sm btn-light border dropdown-toggle" type="button"
-                                            data-bs-toggle="dropdown">Action</button>
+                                            data-bs-toggle="dropdown" data-bs-boundary="viewport">Action</button>
                                         <ul class="dropdown-menu shadow border-0">
                                             <li><button class="dropdown-item" data-bs-toggle="modal"
                                                     data-bs-target="#interviewModal{{ app.id }}">Schedule
@@ -482,89 +492,102 @@
 
 <!-- Chart Initialization Script -->
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         console.log("Status Data:", {{ stats_dict | tojson }});
-        console.log("Dept Data:", {{ dept_stats | tojson }});
-        console.log("Company Data:", {{ company_stats | tojson }});
+    console.log("Dept Data:", {{ dept_stats | tojson }});
+    console.log("Company Data:", {{ company_stats | tojson }});
 
-        // 1. Application Status Chart
-        const statusCtx = document.getElementById('statusChart');
-        if (statusCtx) {
-            const statusData = {{ stats_dict | tojson }};
+    // 1. Application Status Chart
+    const statusCtx = document.getElementById('statusChart');
+    if (statusCtx) {
+        const statusData = {{ stats_dict | tojson }};
+            const labels = Object.keys(statusData);
+            
+            // Fixed color mapping for consistency
+            const colorMap = {
+                'applied': '#4e73df',   // Blue
+                'interview': '#36b9cc', // Cyan
+                'offered': '#1cc88a',   // Green
+                'rejected': '#e74a3b'   // Red
+            };
+            const defaultColor = '#f6c23e'; // Yellow/Warning for others
+
+            const backgroundColors = labels.map(label => colorMap[label.toLowerCase()] || defaultColor);
+
             new Chart(statusCtx.getContext('2d'), {
                 type: 'doughnut',
                 data: {
-                    labels: Object.keys(statusData).map(s => s.charAt(0).toUpperCase() + s.slice(1)),
+                    labels: labels.map(s => s.charAt(0).toUpperCase() + s.slice(1)),
                     datasets: [{
                         data: Object.values(statusData),
-                        backgroundColor: [
-                            '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'
-                        ],
+                        backgroundColor: backgroundColors,
                         hoverOffset: 4
                     }]
                 },
-                options: {
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom' }
-                    }
-                }
-            });
+   options: {
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
         }
 
-        // 2. Department Distribution Chart
-        const deptCtx = document.getElementById('deptChart');
-        if (deptCtx) {
-            const deptStats = {{ dept_stats | tojson }};
-            new Chart(deptCtx.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: deptStats.map(d => d.department || 'Unknown'),
-                    datasets: [{
-                        label: 'Number of Students',
-                        data: deptStats.map(d => d.count),
-                        backgroundColor: '#4e73df',
-                        borderRadius: 5
-                    }]
-                },
-                options: {
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { beginAtZero: true, ticks: { stepSize: 1 } }
-                    },
-                    plugins: {
-                        legend: { display: false }
-                    }
-                }
-            });
+    // 2. Department Distribution Chart
+    const deptCtx = document.getElementById('deptChart');
+    if (deptCtx) {
+        const deptStats = {{ dept_stats | tojson
+    }};
+    new Chart(deptCtx.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: deptStats.map(d => d.department || 'Unknown'),
+            datasets: [{
+                label: 'Number of Students',
+                data: deptStats.map(d => d.count),
+                backgroundColor: '#4e73df',
+                borderRadius: 5
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1 } }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
         }
 
-        // 3. Top Companies Chart
-        const companyCtx = document.getElementById('companyChart');
-        if (companyCtx) {
-            const companyStats = {{ company_stats | tojson }};
-            new Chart(companyCtx.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: companyStats.map(c => c.company_name),
-                    datasets: [{
-                        label: 'Job Postings',
-                        data: companyStats.map(c => c.count),
-                        backgroundColor: '#1cc88a',
-                        borderRadius: 5
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: { beginAtZero: true, ticks: { stepSize: 1 } }
-                    },
-                    plugins: {
-                        legend: { display: false }
-                    }
-                }
-            });
+    // 3. Top Companies Chart
+    const companyCtx = document.getElementById('companyChart');
+    if (companyCtx) {
+        const companyStats = {{ company_stats | tojson
+    }};
+    new Chart(companyCtx.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: companyStats.map(c => c.company_name),
+            datasets: [{
+                label: 'Job Postings',
+                data: companyStats.map(c => c.count),
+                backgroundColor: '#1cc88a',
+                borderRadius: 5
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            maintainAspectRatio: false,
+            scales: {
+                x: { beginAtZero: true, ticks: { stepSize: 1 } }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
         }
     });
 </script>

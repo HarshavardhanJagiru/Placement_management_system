@@ -128,3 +128,21 @@ def send_reset_otp_email(receiver_email, otp_code):
     </html>
     """
     return _send_html_email(receiver_email, subject, html_body)
+
+def send_custom_email(receiver_email, subject, body_text):
+    """Sends a formatted HTML email with custom content"""
+    html_body = f"""
+    <html>
+      <body style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f8fafc; padding: 40px 20px;">
+        <div style="max-width: 600px; margin: 0 auto; background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-top: 4px solid #4f46e5;">
+          <h2 style="color: #1e293b; margin-top: 0;">Placement Update</h2>
+          <div style="color: #475569; font-size: 16px; line-height: 1.6; white-space: pre-wrap;">
+            {body_text}
+          </div>
+          <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 30px 0;">
+          <p style="color: #94a3b8; font-size: 12px; text-align: center;">This is an automated message from the Placement Management System.</p>
+        </div>
+      </body>
+    </html>
+    """
+    return _send_html_email(receiver_email, subject, html_body)

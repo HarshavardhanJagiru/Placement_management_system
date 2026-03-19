@@ -250,7 +250,13 @@ def student_dashboard():
             student = cursor.fetchone()
             cursor.execute("SELECT job_id, status FROM applications WHERE student_id = %s", (student['id'],))
             applied_jobs = {app['job_id']: app['status'] for app in cursor.fetchall()}
-        return render_template('student_dashboard.html', jobs=jobs, applied_jobs=applied_jobs, student=student)
+            
+            # Application stats for chart
+            cursor.execute("SELECT status, COUNT(*) as count FROM applications WHERE student_id = %s GROUP BY status", (student['id'],))
+            stats = cursor.fetchall()
+            stats_dict = {row['status']: row['count'] for row in stats}
+            
+        return render_template('student_dashboard.html', jobs=jobs, applied_jobs=applied_jobs, student=student, stats_dict=stats_dict)
     finally:
         db.close()
 

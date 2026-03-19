@@ -3,16 +3,73 @@
 {% block title %}Student Dashboard - Placement Management System{% endblock %}
 
 {% block content %}
-<section class="row mb-4 align-items-center">
-    <div class="col-md-6">
-        <h2 class="fw-bold">Candidate <span class="text-primary">Portal</span></h2>
-        <p class="text-muted">Active opportunities for <strong>{{ session.username }}</strong></p>
+<section class="row mb-4 align-items-stretch">
+    <div class="col-md-8 mb-4">
+        <div class="card border-0 shadow-sm h-100 p-4">
+            <h2 class="fw-bold">Candidate <span class="text-primary">Portal</span></h2>
+            <p class="text-muted">Active opportunities for <strong>{{ session.username }}</strong></p>
+            <div class="mt-auto">
+                <a href="{{ url_for('profile') }}" class="btn btn-outline-primary px-4 me-2">Edit Profile</a>
+                <a href="{{ url_for('my_applications') }}" class="btn btn-primary px-4 shadow-sm">My Applications</a>
+            </div>
+        </div>
     </div>
-    <div class="col-md-6 text-end">
-        <a href="{{ url_for('profile') }}" class="btn btn-outline-primary px-4 me-2">My Profile</a>
-        <a href="{{ url_for('my_applications') }}" class="btn btn-primary px-4 shadow-sm">My Applications</a>
+    <div class="col-md-4 mb-4">
+        <div class="card border-0 shadow-sm h-100 p-3 text-center">
+            <h6 class="fw-bold text-muted mb-3 small uppercase">Application Insights</h6>
+            {% if stats_dict %}
+                <div style="height: 180px;">
+                    <canvas id="studentStatusChart"></canvas>
+                </div>
+            {% else %}
+                <div class="d-flex flex-column justify-content-center h-100 py-4">
+                    <i class="bi bi-pie-chart text-muted opacity-25 fs-1 mb-2"></i>
+                    <p class="text-muted small mb-0">No applications yet.<br>Start applying to see insights!</p>
+                </div>
+            {% endif %}
+        </div>
     </div>
 </section>
+
+<!-- Personal Chart Initialization -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('studentStatusChart');
+        if (ctx) {
+            const statusData = {{ stats_dict | tojson }};
+            const labels = Object.keys(statusData);
+            
+            const colorMap = {
+                'applied': '#4e73df',   // Blue
+                'interview': '#36b9cc', // Cyan
+                'offered': '#1cc88a',   // Green
+                'rejected': '#e74a3b'   // Red
+            };
+            const defaultColor = '#f6c23e';
+            const backgroundColors = labels.map(label => colorMap[label.toLowerCase()] || defaultColor);
+
+            new Chart(ctx.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: labels.map(s => s.charAt(0).toUpperCase() + s.slice(1)),
+                    datasets: [{
+                        data: Object.values(statusData),
+                        backgroundColor: backgroundColors,
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } }
+                    }
+                }
+            });
+        }
+    });
+</script>
 
 <section class="mb-5">
     <div class="card border-0 shadow-sm p-2">

@@ -244,7 +244,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Department Distribution Chart -->
             <div class="col-md-6 mb-4">
                 <div class="card border-0 shadow-sm h-100">
@@ -409,7 +409,8 @@
             <form action="{{ url_for('schedule_interview', app_id=app.id) }}" method="POST">
                 <div class="modal-body">
                     <p class="small text-muted mb-3">Scheduling interview for <strong>{{ app.full_name }}</strong> at
-                        <strong>{{ app.company_name }}</strong>.</p>
+                        <strong>{{ app.company_name }}</strong>.
+                    </p>
                     <div class="mb-3">
                         <label class="form-label">Date & Time</label>
                         <input type="datetime-local" name="interview_date" class="form-control" required>
@@ -479,4 +480,92 @@
     </div>
 </div>
 
+<!-- Chart Initialization Script -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("Status Data:", {{ stats_dict | tojson }});
+        console.log("Dept Data:", {{ dept_stats | tojson }});
+        console.log("Company Data:", {{ company_stats | tojson }});
+
+        // 1. Application Status Chart
+        const statusCtx = document.getElementById('statusChart');
+        if (statusCtx) {
+            const statusData = {{ stats_dict | tojson }};
+            new Chart(statusCtx.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(statusData).map(s => s.charAt(0).toUpperCase() + s.slice(1)),
+                    datasets: [{
+                        data: Object.values(statusData),
+                        backgroundColor: [
+                            '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'
+                        ],
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        // 2. Department Distribution Chart
+        const deptCtx = document.getElementById('deptChart');
+        if (deptCtx) {
+            const deptStats = {{ dept_stats | tojson }};
+            new Chart(deptCtx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: deptStats.map(d => d.department || 'Unknown'),
+                    datasets: [{
+                        label: 'Number of Students',
+                        data: deptStats.map(d => d.count),
+                        backgroundColor: '#4e73df',
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        // 3. Top Companies Chart
+        const companyCtx = document.getElementById('companyChart');
+        if (companyCtx) {
+            const companyStats = {{ company_stats | tojson }};
+            new Chart(companyCtx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: companyStats.map(c => c.company_name),
+                    datasets: [{
+                        label: 'Job Postings',
+                        data: companyStats.map(c => c.count),
+                        backgroundColor: '#1cc88a',
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { beginAtZero: true, ticks: { stepSize: 1 } }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+    });
+</script>
 {% endblock %}

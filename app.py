@@ -929,6 +929,44 @@ def student_notifications():
     finally:
         db.close()
 
+@app.route('/student/notifications/clear', methods=['POST'])
+def clear_notifications():
+    if 'user_id' not in session or session['role'] != 'student':
+        return redirect(url_for('login'))
+        
+    db = get_db_connection()
+    try:
+        with db.cursor() as cursor:
+            cursor.execute("DELETE FROM notifications WHERE user_id = %s", (session['user_id'],))
+            db.commit()
+            flash('All notifications have been cleared.', 'success')
+    except Exception as e:
+        db.rollback()
+        flash(f'An error occurred: {str(e)}', 'error')
+    finally:
+        db.close()
+        
+    return redirect(url_for('student_notifications'))
+
+@app.route('/student/notifications/delete/<int:notif_id>', methods=['POST'])
+def delete_notification(notif_id):
+    if 'user_id' not in session or session['role'] != 'student':
+        return redirect(url_for('login'))
+        
+    db = get_db_connection()
+    try:
+        with db.cursor() as cursor:
+            cursor.execute("DELETE FROM notifications WHERE id = %s AND user_id = %s", (notif_id, session['user_id']))
+            db.commit()
+            flash('Notification deleted.', 'success')
+    except Exception as e:
+        db.rollback()
+        flash(f'An error occurred: {str(e)}', 'error')
+    finally:
+        db.close()
+        
+    return redirect(url_for('student_notifications'))
+
 @app.context_processor
 def inject_notification_count():
     if 'user_id' in session and session.get('role') == 'student':

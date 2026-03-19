@@ -7,6 +7,7 @@
     .selection-row.selected {
         background-color: rgba(99, 102, 241, 0.05);
     }
+
     .sticky-top-actions {
         position: sticky;
         top: 0;
@@ -38,7 +39,7 @@
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-body">
                 <h5 class="fw-bold mb-3"><i class="bi bi-filter me-2"></i>Filters</h5>
-                
+
                 <div class="mb-3">
                     <label class="form-label small fw-bold">Department</label>
                     <select id="deptFilter" class="form-select rounded-pill">
@@ -68,7 +69,8 @@
                 <div class="card-header bg-white border-0 pt-3 d-flex justify-content-between align-items-center">
                     <h5 class="fw-bold mb-0">Recipients (<span id="selectedCount">0</span> selected)</h5>
                     <div>
-                        <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3 me-2" data-bs-toggle="modal" data-bs-target="#messageModal" id="composeBtn" disabled>
+                        <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3 me-2"
+                            data-bs-toggle="modal" data-bs-target="#messageModal" id="composeBtn" disabled>
                             <i class="bi bi-envelope-plus me-2"></i>Compose Message
                         </button>
                     </div>
@@ -90,14 +92,16 @@
                                 {% for student in students %}
                                 <tr class="selection-row">
                                     <td>
-                                        <input type="checkbox" name="student_ids" value="{{ student.id }}" class="form-check-input student-checkbox">
+                                        <input type="checkbox" name="student_ids" value="{{ student.id }}"
+                                            class="form-check-input student-checkbox">
                                     </td>
                                     <td>
                                         <div class="fw-bold">{{ student.full_name or student.username }}</div>
                                         <div class="small text-muted">{{ student.email }}</div>
                                     </td>
                                     <td>{{ student.department or 'N/A' }}</td>
-                                    <td><span class="badge bg-secondary-subtle text-secondary">{{ student.cgpa or 'N/A' }}</span></td>
+                                    <td><span class="badge bg-secondary-subtle text-secondary">{{ student.cgpa or 'N/A'
+                                            }}</span></td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -122,26 +126,32 @@
                         </div>
                         <div class="modal-body">
                             <div class="alert alert-info py-2 small">
-                                <i class="bi bi-info-circle me-2"></i> This message will be sent to <strong id="modalSelectedCount">0</strong> selected students.
+                                <i class="bi bi-info-circle me-2"></i> This message will be sent to <strong
+                                    id="modalSelectedCount">0</strong> selected students.
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Subject</label>
-                                <input type="text" name="subject" class="form-control" placeholder="Recruitment Update: New Opportunities" required>
+                                <input type="text" name="subject" class="form-control"
+                                    placeholder="Recruitment Update: New Opportunities" required>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Message Body</label>
-                                <textarea name="body" class="form-control" rows="8" placeholder="Enter your message here..." required></textarea>
+                                <textarea name="body" class="form-control" rows="8"
+                                    placeholder="Enter your message here..." required></textarea>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label small text-muted">Quick Templates:</label>
                                 <div class="d-flex gap-2">
-                                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill tmpl-btn" data-tmpl="job">Job Alert</button>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill tmpl-btn" data-tmpl="reminder">Profile Reminder</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill tmpl-btn"
+                                        data-tmpl="job">Job Alert</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill tmpl-btn"
+                                        data-tmpl="reminder">Profile Reminder</button>
                                 </div>
                             </div>
                         </div>
                         <div class="modal-footer border-0">
-                            <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-light rounded-pill px-4"
+                                data-bs-dismiss="modal">Cancel</button>
                             <button type="submit" class="btn btn-primary rounded-pill px-4">
                                 <i class="bi bi-send me-2"></i>Send to Recipients
                             </button>
@@ -154,42 +164,42 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const deptFilter = document.getElementById('deptFilter');
-    const cgpaFilter = document.getElementById('cgpaFilter');
-    const cgpaVal = document.getElementById('cgpaVal');
-    const applyBtn = document.getElementById('applyFilters');
-    const studentTableBody = document.getElementById('studentTableBody');
-    const selectAll = document.getElementById('selectAll');
-    const selectedCountSpan = document.getElementById('selectedCount');
-    const modalSelectedCountSpan = document.getElementById('modalSelectedCount');
-    const composeBtn = document.getElementById('composeBtn');
+    document.addEventListener('DOMContentLoaded', function () {
+        const deptFilter = document.getElementById('deptFilter');
+        const cgpaFilter = document.getElementById('cgpaFilter');
+        const cgpaVal = document.getElementById('cgpaVal');
+        const applyBtn = document.getElementById('applyFilters');
+        const studentTableBody = document.getElementById('studentTableBody');
+        const selectAll = document.getElementById('selectAll');
+        const selectedCountSpan = document.getElementById('selectedCount');
+        const modalSelectedCountSpan = document.getElementById('modalSelectedCount');
+        const composeBtn = document.getElementById('composeBtn');
 
-    // Update CGPA label
-    cgpaFilter.addEventListener('input', () => cgpaVal.textContent = cgpaFilter.value);
+        // Update CGPA label
+        cgpaFilter.addEventListener('input', () => cgpaVal.textContent = cgpaFilter.value);
 
-    // Apply Filters via AJAX
-    applyBtn.addEventListener('click', async () => {
-        applyBtn.disabled = true;
-        applyBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Filtering...';
-        
-        try {
-            const response = await fetch('/admin/filter-students', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    department: deptFilter.value,
-                    min_cgpa: cgpaFilter.value
-                })
-            });
-            const students = await response.json();
-            
-            // Rebuild Table
-            studentTableBody.innerHTML = '';
-            students.forEach(s => {
-                const tr = document.createElement('tr');
-                tr.className = 'selection-row';
-                tr.innerHTML = `
+        // Apply Filters via AJAX
+        applyBtn.addEventListener('click', async () => {
+            applyBtn.disabled = true;
+            applyBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Filtering...';
+
+            try {
+                const response = await fetch('/admin/filter-students', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        department: deptFilter.value,
+                        min_cgpa: cgpaFilter.value
+                    })
+                });
+                const students = await response.json();
+
+                // Rebuild Table
+                studentTableBody.innerHTML = '';
+                students.forEach(s => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'selection-row';
+                    tr.innerHTML = `
                     <td><input type="checkbox" name="student_ids" value="${s.id}" class="form-check-input student-checkbox"></td>
                     <td>
                         <div class="fw-bold">${s.full_name || s.username}</div>
@@ -198,58 +208,58 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td>${s.department || 'N/A'}</td>
                     <td><span class="badge bg-secondary-subtle text-secondary">${s.cgpa || 'N/A'}</span></td>
                 `;
-                studentTableBody.appendChild(tr);
-            });
-            
-            updateSelectionStats();
-        } catch (err) {
-            console.error(err);
-            alert('Error filtering students');
-        } finally {
-            applyBtn.disabled = false;
-            applyBtn.textContent = 'Apply Filters';
-            selectAll.checked = false;
-        }
-    });
+                    studentTableBody.appendChild(tr);
+                });
 
-    // Handle Selection Logic
-    studentTableBody.addEventListener('change', (e) => {
-        if (e.target.classList.contains('student-checkbox')) {
-            e.target.closest('tr').classList.toggle('selected', e.target.checked);
-            updateSelectionStats();
-        }
-    });
-
-    selectAll.addEventListener('change', () => {
-        const checkboxes = document.querySelectorAll('.student-checkbox');
-        checkboxes.forEach(cb => {
-            cb.checked = selectAll.checked;
-            cb.closest('tr').classList.toggle('selected', selectAll.checked);
-        });
-        updateSelectionStats();
-    });
-
-    function updateSelectionStats() {
-        const checked = document.querySelectorAll('.student-checkbox:checked').length;
-        selectedCountSpan.textContent = checked;
-        modalSelectedCountSpan.textContent = checked;
-        composeBtn.disabled = checked === 0;
-    }
-
-    // Templates
-    document.querySelectorAll('.tmpl-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const body = document.querySelector('textarea[name="body"]');
-            const subject = document.querySelector('input[name="subject"]');
-            if (btn.dataset.tmpl === 'job') {
-                subject.value = "New Job Opportunity Relevent to Your Profile";
-                body.value = "Hello,\n\nA new job posting that matches your department and skills has just been added to the portal. Please log in and review the vacancy under 'Active Jobs'.\n\nBest regards,\nPlacement Cell";
-            } else if (btn.dataset.tmpl === 'reminder') {
-                subject.value = "Action Required: Complete Your Placement Profile";
-                body.value = "Dear Student,\n\nWe noticed that your profile is incomplete. Having a complete profile and an uploaded resume is mandatory for applying to job openings.\n\nPlease update your profile as soon as possible.\n\nPlacement Cell";
+                updateSelectionStats();
+            } catch (err) {
+                console.error(err);
+                alert('Error filtering students');
+            } finally {
+                applyBtn.disabled = false;
+                applyBtn.textContent = 'Apply Filters';
+                selectAll.checked = false;
             }
         });
+
+        // Handle Selection Logic
+        studentTableBody.addEventListener('change', (e) => {
+            if (e.target.classList.contains('student-checkbox')) {
+                e.target.closest('tr').classList.toggle('selected', e.target.checked);
+                updateSelectionStats();
+            }
+        });
+
+        selectAll.addEventListener('change', () => {
+            const checkboxes = document.querySelectorAll('.student-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = selectAll.checked;
+                cb.closest('tr').classList.toggle('selected', selectAll.checked);
+            });
+            updateSelectionStats();
+        });
+
+        function updateSelectionStats() {
+            const checked = document.querySelectorAll('.student-checkbox:checked').length;
+            selectedCountSpan.textContent = checked;
+            modalSelectedCountSpan.textContent = checked;
+            composeBtn.disabled = checked === 0;
+        }
+
+        // Templates
+        document.querySelectorAll('.tmpl-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const body = document.querySelector('textarea[name="body"]');
+                const subject = document.querySelector('input[name="subject"]');
+                if (btn.dataset.tmpl === 'job') {
+                    subject.value = "New Job Opportunity Relevent to Your Profile";
+                    body.value = "Hello,\n\nA new job posting that matches your department and skills has just been added to the portal. Please log in and review the vacancy under 'Active Jobs'.\n\nBest regards,\nPlacement Cell";
+                } else if (btn.dataset.tmpl === 'reminder') {
+                    subject.value = "Action Required: Complete Your Placement Profile";
+                    body.value = "Dear Student,\n\nWe noticed that your profile is incomplete. Having a complete profile and an uploaded resume is mandatory for applying to job openings.\n\nPlease update your profile as soon as possible.\n\nPlacement Cell";
+                }
+            });
+        });
     });
-});
 </script>
 {% endblock %}

@@ -412,7 +412,7 @@ def send_bulk_message():
     db = get_db_connection()
     success_count = 0
     try:
-        from utils import send_email
+        from utils import send_custom_email
         with db.cursor() as cursor:
             # Get emails for selected IDs
             format_strings = ','.join(['%s'] * len(student_ids))
@@ -420,7 +420,7 @@ def send_bulk_message():
             recipients = cursor.fetchall()
             
             for recipient in recipients:
-                if send_email(recipient['email'], subject, body):
+                if send_custom_email(recipient['email'], subject, body):
                     success_count += 1
                     
     finally:

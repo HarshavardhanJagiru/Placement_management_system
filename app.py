@@ -333,6 +333,34 @@ def admin_dashboard():
     finally:
         db.close()
 
+@app.route('/admin/api/interviews')
+def api_interviews():
+    if 'user_id' not in session or session.get('role') != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    db = get_db_connection()
+    try:
+        with db.cursor() as cursor:
+            cursor.execute("""
+                SELECT s.full_name, j.company_name, j.position, a.interview_date, a.id 
+                FROM applications a
+                JOIN students s ON a.student_id = s.id
+                JOIN jobs j ON a.job_id = j.id
+                WHERE a.status = 'interview' AND a.interview_date IS NOT NULL
+            """)
+            interviews = cursor.fetchall()
+            
+            events = []
+            for inv in interviews:
+                events.append({
+                    'title': f"{inv['full_name']} - {inv['company_name']}",
+                    'start': inv['interview_date'].isoformat() if inv['interview_date'] else None,
+                    'color': '#20c997' # Bootstrap teal
+                })
+            return jsonify(events)
+    finally:
+        db.close()
+
 @app.route('/admin/bulk-actions')
 def admin_bulk_actions():
     if 'user_id' not in session or session.get('role') != 'admin':

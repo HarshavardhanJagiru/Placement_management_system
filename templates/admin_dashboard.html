@@ -21,6 +21,8 @@
         z-index: 1060 !important;
     }
 </style>
+<!-- FullCalendar -->
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
 {% endblock %}
 
 {% block content %}
@@ -63,6 +65,11 @@
     <li class="nav-item">
         <button class="nav-link rounded-pill px-4 ms-2" data-bs-toggle="pill" data-bs-target="#stats-tab">
             <i class="bi bi-graph-up me-2"></i>Statistics
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link rounded-pill px-4 ms-2 border border-primary text-primary" data-bs-toggle="pill" id="calDropdownBtn" data-bs-target="#calendar-tab">
+            <i class="bi bi-calendar-check me-2"></i>Interview Calendar
         </button>
     </li>
 </ul>
@@ -280,6 +287,16 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Interview Calendar Tab -->
+    <div class="tab-pane fade" id="calendar-tab">
+        <div class="card border-0 shadow-sm glass-card">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-4"><i class="bi bi-calendar-week me-2 text-primary"></i>Upcoming Interviews</h5>
+                <div id="interviewCalendar" style="min-height: 600px;"></div>
             </div>
         </div>
     </div>
@@ -593,6 +610,33 @@
         }
     });
         }
+    });
+
+    // 4. Interview Calendar Initialization
+    document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('interviewCalendar');
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            themeSystem: 'bootstrap5',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,listMonth'
+            },
+            events: '/admin/api/interviews',
+            eventTimeFormat: {
+                hour: 'numeric',
+                minute: '2-digit',
+                meridiem: 'short'
+            },
+            height: 'auto'
+        });
+
+        // Bootstrap tabs require render trigger when shown because the container width is initially 0
+        var calTab = document.getElementById('calDropdownBtn');
+        calTab.addEventListener('shown.bs.tab', function () {
+            calendar.render();
+        });
     });
 </script>
 {% endblock %}

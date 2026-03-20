@@ -1,56 +1,64 @@
-# Placement Management System
+# University Placement Management System 🎓
 
-A simple, functional full-stack application for managing student placements, job postings, and applications. Built as an individual FSD project using modern web technologies.
+A modern, full-stack Applicant Tracking System (ATS) and Placement Portal built with Flask and MySQL. This system bridging the gap between university placement cells and students by automating the recruitment workflow.
 
-##  Features
+## 🌟 Key Features
 
-- **Semantic HTML5**: Structured using header, nav, section, and footer tags.
-- **Bootstrap UI**: Professional look and feel using cards, modals, and grid system.
-- **jQuery Validation**: Real-time client-side form validation for a better user experience.
-- **Flask Backend**: Robust routing and Jinja2 templating.
-- **MySQL Database**: Persistent storage for students, jobs, and applications.
+### For Administrators (Placement Cell)
+- **Advanced Dashboard**: Real-time analytics on placement metrics, department-wise tracking, and top recruiters using Chart.js.
+- **Job Management**: Create, edit, and manage job postings with specified criteria (CGPA, deadline).
+- **Automated Workflow (Kanban)**: Drag-and-drop application tracking (Applied -> Interview -> Offered -> Rejected).
+- **Bulk Action Center**: Filter students dynamically by department and CGPA, and send customized bulk emails.
+- **Automated Notifications**: System automatically dispatches emails for OTP verification, interview alerts, and background 24-hour reminders.
+- **Export Reports**: Generate and download CSV reports of all student data for official records.
 
-## 🛠️ Tech Stack
+### For Students
+- **Smart Profile**: Track CGPA, Department, Skills, and upload Resumes securely.
+- **ATS Resume Parsing**: Automated data extraction from uploaded resumes.
+- **Job Discovery**: View active drives and apply natively on the platform.
+- **Personal Analytics**: Visual breakdown (Doughnut Chart) of individual application success rates.
+- **Notification Inbox**: Read, manage, and delete real-time application updates.
+- **Security Check**: Enforced password strength with frontend & backend validation, plus OTP-based password resets.
 
-- **Frontend**: HTML5, Bootstrap 5, jQuery
-- **Backend**: Flask (Python)
-- **Database**: MySQL
-- **Dependencies**: cryptography, pymysql
+## 💻 Tech Stack
+- **Backend Framework**: Python (Flask)
+- **Database**: MySQL (`pymysql`)
+- **Frontend Architecture**: HTML5, Vanilla CSS (`landing.css`, `style.css`), Bootstrap 5
+- **Visualizations**: Chart.js
+- **Background Tasks**: Python Threading
+- **Authentication**: JWT/Session-based, SMTP Email Verification
 
-##  Setup Instructions
+## 🚀 Quick Setup Guide
 
 ### 1. Prerequisites
-- Python 3.10+
-- MySQL Server (XAMPP/WAMP)
+- Python 3.8+
+- MySQL Server running locally
 
-### 2. Installation
-1. Clone or copy the project to your local machine.
-2. Install the required Python packages:
-   ```bash
-   pip install -r requirements.txt
-   ```
+### 2. Environment Setup
+Clone the repository and install dependencies:
+```bash
+pip install -r requirements.txt
+```
 
 ### 3. Database Initialization
-1. Ensure your MySQL server is running.
-2. Update the `db_config` in `app.py` and `init_db.py` if your credentials differ.
-3. Run the initialization script:
-   ```bash
-   python init_db.py
-   python seed_data.py
-   ```
+Ensure your MySQL server is running. Then, run the initialization script to automatically create the schema and tables:
+```bash
+python init_db.py
+```
+*(Optionally) Insert sample data:*
+```bash
+python seed_data.py
+```
 
-### 4. Running the App
-Start the Flask server:
+### 4. Run the Application
+Start the Flask development server:
 ```bash
 python app.py
 ```
 Open `http://127.0.0.1:5000` in your browser.
 
-## 📸 Demo Steps
-1. **Register**: Sign up as a new student.
-2. **Browse Jobs**: View available opportunities on the dashboard.
-3. **Apply**: Submit an application for a job.
-4. **Admin Panel**: Login as admin (`admin/admin123`) to post new jobs and view statistics.
+## 🔐 Default Admin Credentials (If Seeded)
+- **Email**: `admin@university.edu`
+- **Password**: `AdminPassword!23` 
 
-##  License
-This project is for educational purposes.
+*(Or register a new account on the UI and manually set `role = 'admin'` in the database for the first time setup).*

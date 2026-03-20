@@ -717,6 +717,10 @@ def change_password():
 def view_resume(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
+
 @app.route('/student/my_applications')
 def my_applications():
     if 'user_id' not in session or session['role'] != 'student':

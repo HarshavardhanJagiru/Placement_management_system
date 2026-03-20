@@ -79,23 +79,40 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">New Password</label>
-                        <input type="password" name="new_password" class="form-control" required
-                               pattern="(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}" 
-                               title="Must be at least 8 characters with 1 uppercase, 1 number, and 1 special character">
-                        <div class="form-text small">At least 8 chars, 1 uppercase, 1 number, and 1 special.</div>
+                        <input type="password" name="new_password" id="profile_new_password" class="form-control" required>
+                        <div class="form-text small" id="profilePasswordHelp">At least 8 chars, 1 uppercase, 1 number, and 1 special.</div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Confirm New Password</label>
-                        <input type="password" name="confirm_password" class="form-control" required>
+                        <input type="password" name="confirm_password" id="profile_confirm_password" class="form-control" required>
                     </div>
                 </div>
                 <div class="modal-footer border-0">
-                    <button type="submit" class="btn btn-primary w-100 py-2 rounded-pill">Update Password</button>
+                    <button type="submit" id="updatePasswordBtn" class="btn btn-primary w-100 py-2 rounded-pill">Update Password</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<script>
+document.getElementById('changePasswordModal').querySelector('form').addEventListener('submit', function(e) {
+    const password = document.getElementById('profile_new_password').value;
+    const confirm = document.getElementById('profile_confirm_password').value;
+    const regex = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+    
+    if (!regex.test(password)) {
+        e.preventDefault();
+        const helpText = document.getElementById('profilePasswordHelp');
+        helpText.classList.add('text-danger', 'fw-bold');
+        helpText.innerHTML = '<i class="bi bi-x-circle me-1"></i>Requirements not met: 8+ chars, 1 uppercase, 1 number, 1 special.';
+        document.getElementById('profile_new_password').focus();
+    } else if (password !== confirm) {
+        e.preventDefault();
+        alert("New passwords do not match!");
+    }
+});
+</script>
 
 <!-- Delete Account Modal -->
 <div class="modal fade" id="deleteAccountModal" tabindex="-1">

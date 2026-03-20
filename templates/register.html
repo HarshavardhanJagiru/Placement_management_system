@@ -35,10 +35,8 @@
                     </div>
                     <div class="mb-4">
                         <label for="password" class="form-label">Password</label>
-                        <input type="password" name="password" class="form-control" id="password" required 
-                               pattern="(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}" 
-                               title="Must be at least 8 characters with 1 uppercase, 1 number, and 1 special character">
-                        <div class="form-text small">At least 8 characters, 1 uppercase, 1 number, and 1 special character.</div>
+                        <input type="password" name="password" class="form-control" id="password" required>
+                        <div class="form-text small" id="passwordHelp">At least 8 characters, 1 uppercase, 1 number, and 1 special character.</div>
                     </div>
                     <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">Create Account</button>
                 </form>
@@ -49,4 +47,20 @@
         </div>
     </div>
 </div>
+
+<script>
+document.querySelector('form').addEventListener('submit', function(e) {
+    const password = document.getElementById('password').value;
+    const regex = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+    
+    if (!regex.test(password)) {
+        e.preventDefault();
+        const helpText = document.getElementById('passwordHelp');
+        helpText.classList.remove('text-muted');
+        helpText.classList.add('text-danger', 'fw-bold');
+        helpText.innerHTML = '<i class="bi bi-x-circle me-1"></i>Password does not meet requirements. Please ensure it has 8+ characters, 1 uppercase, 1 number, and 1 special character.';
+        document.getElementById('password').focus();
+    }
+});
+</script>
 {% endblock %}

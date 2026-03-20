@@ -720,6 +720,11 @@ def change_password():
     if new_password != confirm_password:
         flash('New passwords do not match.', 'error')
         return redirect(request.referrer or url_for('index'))
+        
+    is_valid, msg = is_strong_password(new_password)
+    if not is_valid:
+        flash(msg, 'error')
+        return redirect(request.referrer or url_for('index'))
     
     user_id = session['user_id']
     db = get_db_connection()

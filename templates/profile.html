@@ -79,7 +79,10 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">New Password</label>
-                        <input type="password" name="new_password" class="form-control" required>
+                        <input type="password" name="new_password" class="form-control" required
+                               pattern="(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}" 
+                               title="Must be at least 8 characters with 1 uppercase, 1 number, and 1 special character">
+                        <div class="form-text small">At least 8 chars, 1 uppercase, 1 number, and 1 special.</div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Confirm New Password</label>

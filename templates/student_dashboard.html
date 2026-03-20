@@ -2,6 +2,11 @@
 
 {% block title %}Student Dashboard - Placement Management System{% endblock %}
 
+{% block head %}
+<!-- FullCalendar -->
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
+{% endblock %}
+
 {% block content %}
 <section class="row mb-4 align-items-stretch">
     <div class="col-md-8 mb-4">
@@ -27,6 +32,16 @@
                     <p class="text-muted small mb-0">No applications yet.<br>Start applying to see insights!</p>
                 </div>
             {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- Personal Interview Calendar -->
+<section class="row mb-5">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm glass-card p-4">
+            <h5 class="fw-bold mb-4"><i class="bi bi-calendar-event me-2 text-primary"></i>My Interview Schedule</h5>
+            <div id="studentCalendar" style="min-height: 400px;"></div>
         </div>
     </div>
 </section>
@@ -68,6 +83,26 @@
                 }
             });
         }
+
+        // Student Interview Calendar Initialization
+        var calendarEl = document.getElementById('studentCalendar');
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            themeSystem: 'bootstrap5',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,listMonth'
+            },
+            events: '/student/api/interviews',
+            eventTimeFormat: {
+                hour: 'numeric',
+                minute: '2-digit',
+                meridiem: 'short'
+            },
+            height: 'auto'
+        });
+        calendar.render();
     });
 </script>
 

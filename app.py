@@ -749,6 +749,39 @@ def view_resume(filename):
 def page_not_found(e):
     return render_template('404.html'), 404
 
+@app.route('/student/api/interviews')
+def student_api_interviews():
+    if 'user_id' not in session or session.get('role') != 'student':
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    db = get_db_connection()
+    try:
+        with db.cursor() as cursor:
+            # First get student_id
+            cursor.execute("SELECT id FROM students WHERE user_id = %s", (session['user_id'],))
+            student = cursor.fetchone()
+            if not student:
+                return jsonify([])
+                
+            cursor.execute("""
+                SELECT j.company_name, j.position, a.interview_date 
+                FROM applications a
+                JOIN jobs j ON a.job_id = j.id
+                WHERE a.student_id = %s AND a.status = 'interview' AND a.interview_date IS NOT NULL
+            """, (student['id'],))
+            interviews = cursor.fetchall()
+            
+            events = []
+            for inv in interviews:
+                events.append({
+                    'title': f"Interview: {inv['company_name']} ({inv['position']})",
+                    'start': inv['interview_date'].isoformat() if inv['interview_date'] else None,
+                    'color': '#20c997' # Bootstrap teal
+                })
+            return jsonify(events)
+    finally:
+        db.close()
+
 @app.route('/student/my_applications')
 def my_applications():
     if 'user_id' not in session or session['role'] != 'student':

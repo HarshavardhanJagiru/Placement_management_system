@@ -5,6 +5,16 @@
 {% block head %}
 <!-- FullCalendar -->
 <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
+<style>
+    /* Fix FullCalendar text truncation */
+    .fc-event-title, .fc-event-time {
+        white-space: normal !important;
+        overflow: hidden !important;
+    }
+    .fc-h-event {
+        padding: 2px 4px !important;
+    }
+</style>
 {% endblock %}
 
 {% block content %}

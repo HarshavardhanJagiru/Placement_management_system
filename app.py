@@ -1092,8 +1092,4 @@ def background_reminder_task():
         time.sleep(3600)
 
 if __name__ == '__main__':
-    # Start reminder thread
-    reminder_thread = threading.Thread(target=background_reminder_task, daemon=True)
-    reminder_thread.start()
-    
-    app.run(debug=True, use_reloader=False) # Reloader can start thread twice
+    app.run(debug=True)

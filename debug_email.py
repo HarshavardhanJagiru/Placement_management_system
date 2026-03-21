@@ -1,10 +1,11 @@
 import smtplib
+import os
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 # Common configuration
-SENDER_EMAIL = "reply.not.for.this.mail@gmail.com"
-SENDER_PASSWORD = "vmlu ctyy gajk hlar"
+SENDER_EMAIL = os.getenv("EMAIL_USER")
+SENDER_PASSWORD = os.getenv("EMAIL_PASS")
 receiver_email = "harshavardhanjagiru0218@gmail.com"
 
 def test_mail():

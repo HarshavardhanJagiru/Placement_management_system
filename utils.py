@@ -1,11 +1,11 @@
 import smtplib
+import os
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 
-# Common configuration
-SENDER_EMAIL = "reply.not.for.this.mail@gmail.com"
-SENDER_PASSWORD = "vmlu ctyy gajk hlar"  # User provided App Password
+SENDER_EMAIL = os.getenv("EMAIL_USER")
+SENDER_PASSWORD = os.getenv("EMAIL_PASS")
 
 def log_email_event(message):
     with open("email_log.txt", "a") as f:
